@@ -17,6 +17,24 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+  /* ================= FIREBASE (sincronização entre dispositivos) ================= */
+  const firebaseConfig = {
+    apiKey: "AIzaSyBj9JskW4G50_ziM1NLh3EX0EnoEluJx3A",
+    authDomain: "familia-volei.firebaseapp.com",
+    databaseURL: "https://familia-volei-default-rtdb.firebaseio.com",
+    projectId: "familia-volei",
+    storageBucket: "familia-volei.firebasestorage.app",
+    messagingSenderId: "250165693676",
+    appId: "1:250165693676:web:3ada372301612d336329c9"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const tramaDB = firebase.database();
+  const salesRef = tramaDB.ref('vendas');
+  const catalogRef = tramaDB.ref('catalogo');
+</script>
 <style>
   :root{
     --paper:#EFEAE1;
@@ -1572,8 +1590,23 @@
   }
   function saveSales(sales){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sales));
+    salesRef.set(sales).catch(e=>console.error('Erro ao sincronizar vendas:', e));
   }
   let sales = loadSales();
+
+  // Sincroniza em tempo real com o Firebase: qualquer dispositivo que
+  // altere as vendas atualiza automaticamente todos os outros.
+  salesRef.on('value', snap=>{
+    const remote = snap.val();
+    if(remote === null){
+      // Ainda não existe nada no Firebase: envia o que já temos localmente.
+      salesRef.set(sales);
+      return;
+    }
+    sales = Array.isArray(remote) ? remote : Object.values(remote);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sales));
+    if(typeof renderAll === 'function') renderAll();
+  });
 
   function uid(){
     return 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
@@ -2268,6 +2301,10 @@
   }
   function saveCatalog(items){
     localStorage.setItem(CATALOG_KEY, JSON.stringify(items));
+    catalogRef.set(items).catch(e=>console.error('Erro ao sincronizar catálogo:', e));
+  }
+  function saveCatalogLocalOnly(items){
+    localStorage.setItem(CATALOG_KEY, JSON.stringify(items));
   }
 
   // ---- Migração: peças antigas (1 tamanho por registro) viram 1 peça com lista de tamanhos ----
@@ -2308,7 +2345,20 @@
   }
 
   let catalog = migrateCatalogToSizesFormat(loadCatalog());
-  saveCatalog(catalog);
+  saveCatalogLocalOnly(catalog);
+
+  // Sincroniza o catálogo em tempo real com o Firebase.
+  catalogRef.on('value', snap=>{
+    const remote = snap.val();
+    if(remote === null){
+      // Ainda não existe nada no Firebase: envia o catálogo local atual.
+      catalogRef.set(catalog);
+      return;
+    }
+    catalog = Array.isArray(remote) ? remote : Object.values(remote);
+    localStorage.setItem(CATALOG_KEY, JSON.stringify(catalog));
+    if(typeof renderAll === 'function') renderAll();
+  });
 
   const gName = document.getElementById('gName');
   const gColor = document.getElementById('gColor');
