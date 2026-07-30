@@ -242,6 +242,41 @@
   }
   .total-card.accent .t-value{ color:var(--bronze-deep); }
 
+  /* ---- painel suspenso de custo (compacto) ---- */
+  .cost-dropdown{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:0 8px 20px rgba(33,29,24,.10);
+    padding:14px;
+    margin:-4px 0 22px;
+  }
+  .cost-dropdown-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:10px;
+  }
+  .cost-mini-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:10px 12px;
+  }
+  .cost-mini-card .t-label{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    margin-bottom:5px;
+  }
+  .cost-mini-card .t-value{
+    font-family:'Playfair Display',serif;
+    font-weight:700;
+    font-size:18px;
+    color:var(--ink);
+  }
+  .cost-mini-card.accent .t-value{ color:var(--bronze-deep); }
+
   /* ---- cards / sections ---- */
   .card{
     background:var(--card);
@@ -573,6 +608,29 @@
   .status-pill.is-pending{ background:#F4DED9; color:var(--danger); }
   .status-pill:hover{ opacity:.82; }
 
+  /* ---- abas disponível / vendido (tabela de preços) ---- */
+  .price-tab-toggle{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:5px;
+    overflow:hidden;
+    height:39px;
+    margin-bottom:14px;
+  }
+  .price-tab-btn{
+    flex:1;
+    background:#fff;
+    border:none;
+    padding:0 8px;
+    font-family:'Jost',sans-serif;
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:background .15s,color .15s;
+  }
+  .price-tab-btn + .price-tab-btn{ border-left:1px solid var(--line); }
+  .price-tab-btn.active{ background:var(--ink); color:#fff; }
+
   /* ---- pendentes de pagamento ---- */
   .pending-card{ border-color:var(--danger-light); }
   .pending-card .card-title span:first-child{ color:var(--danger); }
@@ -580,6 +638,44 @@
     font-family:'Playfair Display',serif;
     font-weight:700;
     font-size:18px;
+    color:var(--danger);
+  }
+  .pending-card-compact{
+    padding:16px 20px;
+    margin-bottom:24px;
+  }
+  .pending-card-title{
+    margin:0 0 10px;
+    font-size:16px;
+  }
+  .pending-card-title .icon-btn{
+    background:transparent;
+    border-color:var(--danger-light);
+    color:var(--danger);
+    flex-shrink:0;
+  }
+  .pending-card-title .icon-btn:hover{ background:var(--danger); color:#fff; }
+  .pending-summary-row{
+    display:flex;
+    align-items:center;
+    gap:28px;
+    flex-wrap:wrap;
+  }
+  .pending-summary-item{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .pending-summary-label{
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+  }
+  .pending-summary-value{
+    font-family:'Playfair Display',serif;
+    font-weight:700;
+    font-size:19px;
     color:var(--danger);
   }
   .pending-list{
@@ -1037,13 +1133,61 @@
           </div>
         </div>
 
-        <!-- Pendentes de pagamento -->
-        <div class="card pending-card" id="pendingCard">
-          <div class="card-title">
-            <span>Pendentes de pagamento</span>
-            <span class="pending-total-value" id="pendingTotalValue">R$ 0,00</span>
+        <button type="button" class="btn btn-secondary" id="btnToggleCost" style="margin-bottom:14px;">Ver custo total</button>
+
+        <div class="cost-dropdown" id="costTotalsGrid" style="display:none;">
+          <div class="cost-dropdown-grid">
+            <div class="cost-mini-card">
+              <div class="t-label">Custo de vendas</div>
+              <div class="t-value" id="totalCost">R$ 0,00</div>
+            </div>
+            <div class="cost-mini-card">
+              <div class="t-label">Custo em estoque</div>
+              <div class="t-value" id="totalStockCost">R$ 0,00</div>
+            </div>
+            <div class="cost-mini-card accent">
+              <div class="t-label">Custo total (vendas + estoque)</div>
+              <div class="t-value" id="totalCostAll">R$ 0,00</div>
+            </div>
+            <div class="cost-mini-card">
+              <div class="t-label">Lucro estimado</div>
+              <div class="t-value" id="totalProfit">R$ 0,00</div>
+            </div>
           </div>
-          <div class="pending-list" id="pendingList"></div>
+        </div>
+
+        <!-- Pendentes de pagamento -->
+        <div class="card pending-card pending-card-compact" id="pendingCard">
+          <div class="card-title pending-card-title">
+            <span>Pendentes de pagamento</span>
+            <button type="button" class="icon-btn" id="btnOpenPending" title="Ver pendências">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="pending-summary-row">
+            <div class="pending-summary-item">
+              <span class="pending-summary-label">Quantidade</span>
+              <span class="pending-summary-value" id="pendingCount">0</span>
+            </div>
+            <div class="pending-summary-item">
+              <span class="pending-summary-label">Valor</span>
+              <span class="pending-summary-value" id="pendingTotalValue">R$ 0,00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal pendentes de pagamento -->
+        <div class="modal-overlay" id="pendingModal">
+          <div class="modal-box price-table-modal-box">
+            <div class="modal-close-bar">
+              <div class="icon-btn" id="closePendingModal">✕</div>
+            </div>
+            <div class="price-table-content">
+              <p class="price-table-title">Pendentes de pagamento</p>
+              <p class="price-table-sub">Vendas ainda não marcadas como pagas.</p>
+              <div class="pending-list" id="pendingList"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Formulário -->
@@ -1349,10 +1493,14 @@
     <div class="price-table-content">
       <p class="price-table-title">Tabela de preços</p>
       <p class="price-table-sub">Consulta rápida de preço e estoque — sem mostrar o preço de custo.</p>
+      <div class="price-tab-toggle" id="priceTableTabs">
+        <button type="button" class="price-tab-btn active" data-tab="available">Disponíveis</button>
+        <button type="button" class="price-tab-btn" data-tab="sold">Vendidos</button>
+      </div>
       <input type="text" id="priceTableSearch" class="filter-search" placeholder="Buscar por produto ou cor..." style="width:100%;margin-bottom:14px;">
       <div class="price-cards-grid" id="priceCardsGrid"></div>
       <div class="empty-state" id="priceTableEmpty" style="display:none;">
-        <div class="big">Nenhuma peça encontrada</div>
+        <div class="big" id="priceTableEmptyMsg">Nenhuma peça encontrada</div>
       </div>
     </div>
   </div>
@@ -1505,11 +1653,14 @@
   // ---- busca de peça no catálogo (autocomplete) ----
   function findCatalogMatches(query){
     const q = (query || '').trim().toLowerCase();
+    // Peças sem nenhuma unidade em estoque não aparecem mais aqui — já foram
+    // vendidas, então não fazem sentido como sugestão para uma nova venda.
+    const inStock = catalog.filter(piece => catalogTotalQty(piece) > 0);
     if(!q){
       // Sem texto digitado: mostra o catálogo inteiro (ordenado por nome) em vez de nada.
-      return [...catalog].sort((a,b)=> a.name.localeCompare(b.name, 'pt-BR'));
+      return [...inStock].sort((a,b)=> a.name.localeCompare(b.name, 'pt-BR'));
     }
-    return catalog.filter(piece =>
+    return inStock.filter(piece =>
       piece.name.toLowerCase().includes(q) ||
       (piece.color || '').toLowerCase().includes(q)
     );
@@ -1517,9 +1668,14 @@
   function renderItemSuggestions(query){
     const matches = findCatalogMatches(query).slice(0, 8);
     if(!matches.length){
-      fItemSuggestions.innerHTML = catalog.length
-        ? '<div class="item-suggestion is-empty">Nenhuma peça encontrada no catálogo</div>'
-        : '<div class="item-suggestion is-empty">Catálogo vazio — cadastre peças na aba Catálogo</div>';
+      let msg = 'Catálogo vazio — cadastre peças na aba Catálogo';
+      if(catalog.length){
+        const hasAnyStock = catalog.some(p => catalogTotalQty(p) > 0);
+        msg = hasAnyStock
+          ? 'Nenhuma peça encontrada no catálogo'
+          : 'Todas as peças do catálogo estão sem estoque';
+      }
+      fItemSuggestions.innerHTML = `<div class="item-suggestion is-empty">${msg}</div>`;
       fItemSuggestions.classList.add('visible');
       return;
     }
@@ -1915,11 +2071,38 @@
   }
 
   /* ================= TOTALIZADORES ================= */
+  const btnToggleCost = document.getElementById('btnToggleCost');
+  const costTotalsGrid = document.getElementById('costTotalsGrid');
+  let costVisible = false;
+  btnToggleCost.addEventListener('click', ()=>{
+    costVisible = !costVisible;
+    costTotalsGrid.style.display = costVisible ? 'block' : 'none';
+    btnToggleCost.textContent = costVisible ? 'Ocultar custo total' : 'Ver custo total';
+  });
+
   function renderTotals(){
     const filtered = getFilteredSales();
     const total = filtered.reduce((sum,s)=> sum + s.value, 0);
     const count = filtered.length;
     const avg = count ? total/count : 0;
+
+    // Custo: só é possível calcular para vendas vinculadas a uma peça do
+    // catálogo que ainda existe (tem o preço de custo cadastrado).
+    const costTotal = filtered.reduce((sum,s)=>{
+      if(!s.catalogId) return sum;
+      const piece = catalog.find(c=>c.id === s.catalogId);
+      if(!piece || piece.cost == null) return sum;
+      return sum + (Number(piece.cost) || 0);
+    }, 0);
+    const profitTotal = total - costTotal;
+    document.getElementById('totalCost').textContent = formatCurrency(costTotal);
+    document.getElementById('totalProfit').textContent = formatCurrency(profitTotal);
+
+    // Custo em estoque: peças ainda cadastradas no catálogo com unidades
+    // disponíveis (não depende dos filtros da tabela de vendas).
+    const stockCost = catalog.reduce((sum,c)=> sum + (Number(c.cost) || 0) * catalogTotalQty(c), 0);
+    document.getElementById('totalStockCost').textContent = formatCurrency(stockCost);
+    document.getElementById('totalCostAll').textContent = formatCurrency(costTotal + stockCost);
 
     const now = new Date();
     const ym = now.toISOString().slice(0,7);
@@ -1936,6 +2119,17 @@
   /* ================= PENDENTES DE PAGAMENTO ================= */
   const pendingList = document.getElementById('pendingList');
   const pendingTotalValue = document.getElementById('pendingTotalValue');
+  const pendingCount = document.getElementById('pendingCount');
+  const pendingModal = document.getElementById('pendingModal');
+  const btnOpenPending = document.getElementById('btnOpenPending');
+  const closePendingModal = document.getElementById('closePendingModal');
+
+  btnOpenPending.addEventListener('click', ()=>{
+    renderPending();
+    pendingModal.classList.add('visible');
+  });
+  closePendingModal.addEventListener('click', ()=> pendingModal.classList.remove('visible'));
+  pendingModal.addEventListener('click', (e)=>{ if(e.target === pendingModal) pendingModal.classList.remove('visible'); });
 
   function renderPending(){
     const pending = sales
@@ -1944,6 +2138,7 @@
 
     const total = pending.reduce((sum,s)=> sum + s.value, 0);
     pendingTotalValue.textContent = formatCurrency(total);
+    pendingCount.textContent = pending.length;
 
     if(pending.length === 0){
       pendingList.innerHTML = '<div class="pending-empty">Nenhuma pendência — tudo pago por aqui. 🎉</div>';
@@ -2495,18 +2690,33 @@
   const priceTableSearch = document.getElementById('priceTableSearch');
   const priceCardsGrid = document.getElementById('priceCardsGrid');
   const priceTableEmpty = document.getElementById('priceTableEmpty');
+  const priceTableEmptyMsg = document.getElementById('priceTableEmptyMsg');
+  const priceTableTabs = document.getElementById('priceTableTabs');
+  let currentPriceTab = 'available';
+
+  priceTableTabs.querySelectorAll('.price-tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      currentPriceTab = btn.dataset.tab;
+      priceTableTabs.querySelectorAll('.price-tab-btn').forEach(b=> b.classList.toggle('active', b === btn));
+      renderPriceTable();
+    });
+  });
 
   function renderPriceTable(){
     const q = priceTableSearch.value.trim().toLowerCase();
     const pieces = catalog
       .slice()
       .filter(piece => !q || piece.name.toLowerCase().includes(q) || piece.color.toLowerCase().includes(q))
+      .filter(piece => currentPriceTab === 'sold' ? catalogTotalQty(piece) <= 0 : catalogTotalQty(piece) > 0)
       .sort((a,b)=> a.name.localeCompare(b.name, 'pt-BR'));
 
     priceCardsGrid.innerHTML = '';
     if(!pieces.length){
       priceCardsGrid.style.display = 'none';
       priceTableEmpty.style.display = 'block';
+      priceTableEmptyMsg.textContent = currentPriceTab === 'sold'
+        ? 'Nenhuma peça vendida ainda'
+        : 'Nenhuma peça disponível em estoque';
       return;
     }
     priceCardsGrid.style.display = 'grid';
@@ -2536,7 +2746,7 @@
             <div class="price-card-price-row"><span>À vista</span><span class="val">${formatCurrency(piece.price)}</span></div>
             <div class="price-card-price-row"><span>Cartão</span><span class="val">${formatCurrency(cardPrice)}</span></div>
           </div>
-          <div class="price-card-total">${totalQty > 0 ? `${totalQty} un. em estoque` : 'Sem estoque'}</div>
+          <div class="price-card-total">${totalQty > 0 ? `${totalQty} un. em estoque` : 'Vendida — sem estoque'}</div>
           <div class="price-card-sizes">${sizesHtml}</div>
         </div>
       `;
@@ -2550,6 +2760,8 @@
 
   function openPriceTableModal(){
     priceTableSearch.value = '';
+    currentPriceTab = 'available';
+    priceTableTabs.querySelectorAll('.price-tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.tab === 'available'));
     renderPriceTable();
     priceTableModal.classList.add('visible');
     closeMobileMenu();
