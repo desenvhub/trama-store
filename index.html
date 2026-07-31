@@ -1109,6 +1109,10 @@
       </div>
       <button class="ghost-btn" id="btnInstallHelp" style="margin-bottom:14px;">Como instalar no celular</button>
       <button class="ghost-btn" id="btnOpenPriceTable" style="margin-bottom:14px;">Consultar tabela de preços</button>
+	<a href="#" onclick="gerarCatalogoPublico(); return false;">📋 Gerar catálogo para clientes</a>
+<a href="#" onclick="alert(Object.keys(localStorage).join('
+')); return false;">🔍 Ver chaves do sistema</a>
+
       <div class="label">Backup dos dados</div>
       <button class="ghost-btn" id="btnExportBackup">Exportar backup (.json)</button>
       <button class="ghost-btn" id="btnImportBackup">Importar backup (.json)</button>
@@ -2925,6 +2929,287 @@
   /* ================= INIT ================= */
   renderAll();
 </script>
+
+<!-- ============================================================
+     BOTÃO "GERAR CATÁLOGO" - INTEGRAÇÃO AO SEU INDEX.HTML
+     ============================================================
+
+     PASSO 1: No sidebar, DEPOIS de "Consultar tabela de preços",
+     adicione esta linha:
+============================================================ -->
+
+<!-- Cole esta linha no sidebar, depois de "Consultar tabela de preços" -->
+<a href="#" onclick="gerarCatalogoPublico(); return false;">📋 Gerar catálogo para clientes</a>
+
+
+<!-- ============================================================
+     PASSO 2: Cole este JavaScript DENTRO da sua tag <script>,
+     no final (antes de fechar </script>)
+============================================================ -->
+
+<script>
+// ===== GERAR CATÁLOGO PÚBLICO (HTML com dados embutidos) =====
+
+function gerarCatalogoPublico() {
+  // Pega as peças do localStorage (mesma chave do seu catálogo)
+  var pecas = JSON.parse(localStorage.getItem('pecas') || '[]');
+
+  if (pecas.length === 0) {
+    alert('⚠️ Nenhuma peça cadastrada! Cadastre peças no catálogo primeiro.');
+    return;
+  }
+
+  // Prepara os dados SEM preço de custo
+  var pecasPublicas = pecas.map(function(p) {
+    return {
+      nome: p.nome || '',
+      cor: p.cor || '',
+      precoVenda: p.precoVenda || p.precoVista || p.preco_venda || p.preco || '',
+      precoCartao: p.precoCartao || p.preco_cartao || '',
+      tamanhos: (p.tamanhos || []).map(function(t) {
+        return {
+          tamanho: t.tamanho || t.nome || '',
+          qtd: parseInt(t.qtd || t.quantidade || 0)
+        };
+      }),
+      foto: p.foto || (p.fotos && p.fotos.length > 0 ? p.fotos[0] : '')
+    };
+  });
+
+  // Gera o HTML completo do catálogo
+  var html = gerarHTMLCatalogo(pecasPublicas);
+
+  // Faz download do arquivo
+  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'catalogo.html';
+  link.click();
+  URL.revokeObjectURL(link.href);
+
+  alert('✅ Catálogo gerado com sucesso!\n\n📁 O arquivo "catalogo.html" foi baixado.\n\n👉 Agora suba ele no seu GitHub para os clientes acessarem pelo link.');
+}
+
+function gerarHTMLCatalogo(pecas) {
+  var totalPecas = pecas.reduce(function(s, p) {
+    return s + p.tamanhos.reduce(function(ss, t) { return ss + t.qtd; }, 0);
+  }, 0);
+  var totalModelos = pecas.length;
+  var totalDisp = pecas.filter(function(p) {
+    return p.tamanhos.reduce(function(s, t) { return s + t.qtd; }, 0) > 0;
+  }).length;
+
+  // Gera os cards
+  var cardsHtml = pecas.map(function(peca) {
+    var totalQtd = peca.tamanhos.reduce(function(s, t) { return s + t.qtd; }, 0);
+    var esgotado = totalQtd === 0;
+
+    var tamsHtml = peca.tamanhos.map(function(t) {
+      if (t.qtd > 0) {
+        return '<span class="size ok">' + t.tamanho + ' (' + t.qtd + ')</span>';
+      } else {
+        return '<span class="size no">' + t.tamanho + '</span>';
+      }
+    }).join('');
+
+    var fotoHtml = '<span style="font-size:56px;color:#ddd;">&#128087;</span>';
+    if (peca.foto) {
+      fotoHtml = '<img src="' + peca.foto + '" alt="' + peca.nome + '">';
+    }
+
+    var badge = '';
+    if (esgotado) {
+      badge = '<span class="badge esgotado">ESGOTADO</span>';
+    }
+
+    var precoVistaHtml = '';
+    if (peca.precoVenda) {
+      precoVistaHtml = 'R$&nbsp;' + parseFloat(peca.precoVenda).toFixed(2).replace('.', ',');
+    }
+    var precoCartaoHtml = '';
+    if (peca.precoCartao && peca.precoCartao !== peca.precoVenda) {
+      precoCartaoHtml = 'ou R$&nbsp;' + parseFloat(peca.precoCartao).toFixed(2).replace('.', ',') + ' no cart\u00e3o';
+    }
+
+    return '<div class="card">' +
+      '<div class="card-img">' + badge + fotoHtml + '</div>' +
+      '<div class="card-info">' +
+        '<div class="card-name">' + peca.nome + '</div>' +
+        '<div class="card-color">' + peca.cor + '</div>' +
+        '<div class="card-sizes">' + tamsHtml + '</div>' +
+        '<div class="card-prices">' +
+          '<span class="price-main">' + precoVistaHtml + '</span>' +
+          '<span class="price-card">' + precoCartaoHtml + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('\n');
+
+  // Monta o HTML completo
+  return '<!DOCTYPE html>\n' +
+'<html lang="pt-BR">\n' +
+'<head>\n' +
+'  <meta charset="UTF-8">\n' +
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+'  <title>TRAMA - Cat\u00e1logo</title>\n' +
+'  <style>\n' +
+'    * { margin:0; padding:0; box-sizing:border-box; }\n' +
+'    body { font-family:system-ui,-apple-system,sans-serif; background:#f5f5f5; color:#1a1a1a; line-height:1.5; }\n' +
+'    .header { background:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee; position:sticky; top:0; z-index:100; flex-wrap:wrap; gap:12px; }\n' +
+'    .brand { display:flex; align-items:center; gap:12px; }\n' +
+'    .brand h1 { font-size:22px; font-weight:700; letter-spacing:2px; }\n' +
+'    .brand span { display:block; font-size:11px; color:#888; text-transform:uppercase; letter-spacing:1px; }\n' +
+'    .actions { display:flex; gap:8px; flex-wrap:wrap; }\n' +
+'    .btn { display:flex; align-items:center; gap:6px; padding:10px 16px; border-radius:8px; border:1px solid #e0e0e0; background:#fff; font-size:13px; font-weight:500; color:#333; cursor:pointer; text-decoration:none; transition:all 0.15s; }\n' +
+'    .btn:hover { background:#f0f0f0; }\n' +
+'    .btn.primary { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }\n' +
+'    .btn.whatsapp { background:#25d366; color:#fff; border-color:#25d366; }\n' +
+'    .banner { background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 50%,#1a1a1a 100%); color:#fff; padding:48px 20px; text-align:center; }\n' +
+'    .banner h2 { font-size:26px; font-weight:300; letter-spacing:4px; margin-bottom:8px; }\n' +
+'    .banner p { font-size:13px; color:#aaa; letter-spacing:1px; }\n' +
+'    .stats { display:flex; justify-content:center; gap:32px; margin-top:20px; }\n' +
+'    .stat-num { font-size:28px; font-weight:700; font-family:monospace; color:#fff; }\n' +
+'    .stat-label { font-size:11px; color:#888; text-transform:uppercase; letter-spacing:1px; }\n' +
+'    .search-bar { padding:16px 20px; background:#fff; border-bottom:1px solid #eee; }\n' +
+'    .search-input { width:100%; max-width:500px; padding:12px 16px; border-radius:10px; border:1px solid #e0e0e0; font-size:14px; background:#f9f9f9; outline:none; }\n' +
+'    .search-input:focus { border-color:#1a1a1a; background:#fff; }\n' +
+'    .filters { padding:14px 20px; display:flex; gap:8px; flex-wrap:wrap; background:#fff; border-bottom:1px solid #eee; }\n' +
+'    .chip { padding:8px 16px; border-radius:20px; border:1px solid #e0e0e0; font-size:13px; color:#555; cursor:pointer; transition:all 0.15s; background:#fff; }\n' +
+'    .chip:hover,.chip.active { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }\n' +
+'    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; padding:24px 20px; max-width:1200px; margin:0 auto; }\n' +
+'    .card { background:#fff; border-radius:12px; overflow:hidden; border:1px solid #eee; transition:all 0.2s; }\n' +
+'    .card:hover { transform:translateY(-4px); box-shadow:0 12px 32px rgba(0,0,0,0.08); }\n' +
+'    .card-img { width:100%; height:300px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }\n' +
+'    .card-img img { width:100%; height:100%; object-fit:cover; }\n' +
+'    .badge { position:absolute; top:12px; left:12px; color:#fff; font-size:10px; font-weight:600; padding:4px 10px; border-radius:4px; }\n' +
+'    .badge.esgotado { background:#dc2626; }\n' +
+'    .card-info { padding:16px 18px 20px; }\n' +
+'    .card-name { font-size:16px; font-weight:600; margin-bottom:4px; }\n' +
+'    .card-color { font-size:12px; color:#888; margin-bottom:12px; }\n' +
+'    .card-sizes { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }\n' +
+'    .size { padding:4px 9px; border-radius:4px; font-size:11px; font-weight:500; border:1px solid #e8e8e8; }\n' +
+'    .size.ok { background:#ecfdf5; color:#15803d; border-color:#bbf7d0; }\n' +
+'    .size.no { background:#fef2f2; color:#aaa; border-color:#fecaca; text-decoration:line-through; }\n' +
+'    .card-prices { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }\n' +
+'    .price-main { font-size:20px; font-weight:700; font-family:monospace; }\n' +
+'    .price-card { font-size:12px; color:#888; }\n' +
+'    .footer { text-align:center; padding:40px 20px; color:#999; font-size:12px; border-top:1px solid #eee; margin-top:20px; background:#fff; }\n' +
+'    .footer .f-brand { font-weight:700; color:#333; letter-spacing:2px; font-size:16px; }\n' +
+'    .empty { text-align:center; padding:60px 20px; color:#888; display:none; }\n' +
+'    @media(max-width:600px) {\n' +
+'      .header { flex-direction:column; align-items:flex-start; }\n' +
+'      .grid { grid-template-columns:repeat(2,1fr); gap:10px; padding:14px; }\n' +
+'      .card-img { height:190px; }\n' +
+'      .card-info { padding:12px 14px 16px; }\n' +
+'      .card-name { font-size:14px; }\n' +
+'      .price-main { font-size:16px; }\n' +
+'      .banner { padding:32px 16px; }\n' +
+'      .banner h2 { font-size:20px; }\n' +
+'      .stats { gap:20px; }\n' +
+'      .stat-num { font-size:22px; }\n' +
+'    }\n' +
+'    @media print {\n' +
+'      .header,.search-bar,.filters,.footer { display:none !important; }\n' +
+'      .grid { grid-template-columns:repeat(3,1fr) !important; }\n' +
+'      .card { break-inside:avoid; }\n' +
+'      .card:hover { transform:none; box-shadow:none; }\n' +
+'    }\n' +
+'  </style>\n' +
+'</head>\n' +
+'<body>\n' +
+'\n' +
+'  <header class="header">\n' +
+'    <div class="brand">\n' +
+'      <svg viewBox="0 0 32 32" fill="none" width="32" height="32"><rect width="32" height="32" rx="6" fill="#1a1a1a"/><path d="M8 12h16M8 16h16M8 20h16" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>\n' +
+'      <div><h1>TRAMA</h1><span>Cat\u00e1logo de pe\u00e7as</span></div>\n' +
+'    </div>\n' +
+'    <div class="actions">\n' +
+'      <button onclick="window.print()" class="btn primary">Salvar PDF</button>\n' +
+'      <a href="https://wa.me/32984701509?text=Ol\u00e1!%20Vi%20o%20cat\u00e1logo%20da%20TRAMA!" class="btn whatsapp" target="_blank">WhatsApp</a>\n' +
+'    </div>\n' +
+'  </header>\n' +
+'\n' +
+'  <section class="banner">\n' +
+'    <h2>COLE\u00c7\u00c3O DISPON\u00cdVEL</h2>\n' +
+'    <p>Pe\u00e7as exclusivas feitas com carinho</p>\n' +
+'    <div class="stats">\n' +
+'      <div><div class="stat-num">' + totalPecas + '</div><div class="stat-label">Pe\u00e7as</div></div>\n' +
+'      <div><div class="stat-num">' + totalModelos + '</div><div class="stat-label">Modelos</div></div>\n' +
+'      <div><div class="stat-num">' + totalDisp + '</div><div class="stat-label">Dispon\u00edveis</div></div>\n' +
+'    </div>\n' +
+'  </section>\n' +
+'\n' +
+'  <div class="search-bar">\n' +
+'    <input type="text" class="search-input" id="busca" placeholder="Buscar pe\u00e7a por nome, cor..." oninput="filtrarPecas()">\n' +
+'  </div>\n' +
+'\n' +
+'  <div class="filters">\n' +
+'    <button class="chip active" onclick="setFiltro(\'todas\',this)">Todas</button>\n' +
+'    <button class="chip" onclick="setFiltro(\'disponivel\',this)">Dispon\u00edveis</button>\n' +
+'    <button class="chip" onclick="setFiltro(\'P\',this)">P</button>\n' +
+'    <button class="chip" onclick="setFiltro(\'M\',this)">M</button>\n' +
+'    <button class="chip" onclick="setFiltro(\'G\',this)">G</button>\n' +
+'    <button class="chip" onclick="setFiltro(\'GG\',this)">GG</button>\n' +
+'  </div>\n' +
+'\n' +
+'  <section class="grid" id="grid">\n' +
+cardsHtml + '\n' +
+'  </section>\n' +
+'\n' +
+'  <div class="empty" id="vazio">\n' +
+'    <p style="font-size:48px;">&#128230;</p>\n' +
+'    <p>Nenhuma pe\u00e7a encontrada</p>\n' +
+'  </div>\n' +
+'\n' +
+'  <footer class="footer">\n' +
+'    <p class="f-brand">TRAMA</p>\n' +
+'    <p>Cat\u00e1logo atualizado \u2022 Pre\u00e7os sujeitos a altera\u00e7\u00e3o</p>\n' +
+'    <p>&#128241; Entre em contato para encomendas</p>\n' +
+'  </footer>\n' +
+'\n' +
+'  <script>\n' +
+'    var filtroAtual = "todas";\n' +
+'    function setFiltro(f, btn) {\n' +
+'      filtroAtual = f;\n' +
+'      document.querySelectorAll(".chip").forEach(function(c){c.classList.remove("active");});\n' +
+'      if(btn) btn.classList.add("active");\n' +
+'      filtrarPecas();\n' +
+'    }\n' +
+'    function filtrarPecas() {\n' +
+'      var busca = document.getElementById("busca").value.toLowerCase();\n' +
+'      var cards = document.querySelectorAll(".card");\n' +
+'      var visiveis = 0;\n' +
+'      cards.forEach(function(card) {\n' +
+'        var nome = card.querySelector(".card-name").textContent.toLowerCase();\n' +
+'        var cor = card.querySelector(".card-color").textContent.toLowerCase();\n' +
+'        var sizes = card.querySelectorAll(".size.ok");\n' +
+'        var temTamanho = true;\n' +
+'        if (filtroAtual !== "todas" && filtroAtual !== "disponivel") {\n' +
+'          temTamanho = false;\n' +
+'          sizes.forEach(function(s) {\n' +
+'            if (s.textContent.toUpperCase().indexOf(filtroAtual.toUpperCase()) === 0) temTamanho = true;\n' +
+'          });\n' +
+'        }\n' +
+'        if (filtroAtual === "disponivel") {\n' +
+'          temTamanho = sizes.length > 0;\n' +
+'        }\n' +
+'        var matchBusca = nome.indexOf(busca) >= 0 || cor.indexOf(busca) >= 0;\n' +
+'        if (matchBusca && temTamanho) {\n' +
+'          card.style.display = "";\n' +
+'          visiveis++;\n' +
+'        } else {\n' +
+'          card.style.display = "none";\n' +
+'        }\n' +
+'      });\n' +
+'      document.getElementById("vazio").style.display = visiveis === 0 ? "block" : "none";\n' +
+'    }\n' +
+'  <\/script>\n' +
+'</body>\n' +
+'</html>';
+}
+</script>
+
+
 
 </body>
 </html>
