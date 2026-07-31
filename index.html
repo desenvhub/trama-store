@@ -34,70 +34,6 @@
   const tramaDB = firebase.database();
   const salesRef = tramaDB.ref('vendas');
   const catalogRef = tramaDB.ref('catalogo');
-// ===== GERAR CATÁLOGO PÚBLICO PARA CLIENTES =====
-  document.getElementById('btnGerarCatalogo').addEventListener('click', function() {
-    const catalog = JSON.parse(localStorage.getItem('trama_catalogo_v1') || '[]');
-    if (catalog.length === 0) {
-      alert('Nenhuma peça cadastrada! Cadastre peças no catálogo primeiro.');
-      return;
-    }
-    const totalPecas = catalog.reduce((s, c) => s + c.sizes.reduce((ss, sz) => ss + sz.qty, 0), 0);
-    const totalModelos = catalog.length;
-// ===== GERAR CATÁLOGO PÚBLICO PARA CLIENTES =====
-  document.getElementById('btnGerarCatalogo').addEventListener('click', function() {
-    const catalog = JSON.parse(localStorage.getItem('trama_catalogo_v1') || '[]');
-    if (catalog.length === 0) {
-      alert('Nenhuma peça cadastrada! Cadastre peças no catálogo primeiro.');
-      return;
-    }
-    const totalPecas = catalog.reduce((s, c) => s + c.sizes.reduce((ss, sz) => ss + sz.qty, 0), 0);
-    const totalModelos = catalog.length;
-    const totalDisp = catalog.filter(c => c.sizes.reduce((s, sz) => s + sz.qty, 0) > 0).length;
-    let cardsHtml = '';
-    catalog.forEach(c => {
-      const totalQtd = c.sizes.reduce((s, sz) => s + sz.qty, 0);
-      const esgotado = totalQtd === 0;
-      let tamHtml = '';
-      c.sizes.forEach(s => {
-        if (s.qty > 0) {
-          tamHtml += '<span class="sz ok">' + s.size + ' (' + s.qty + ')</span>';
-        } else {
-          tamHtml += '<span class="sz no">' + s.size + '</span>';
-        }
-      });
-      let fotoHtml = '<span style="font-size:56px;color:#ddd;">&#128087;</span>';
-      if (c.photo) {
-        fotoHtml = '<img src="' + c.photo + '" alt="' + (c.name || '') + '">';
-      }
-      let badge = esgotado ? '<span class="badge esgotado">ESGOTADO</span>' : '';
-      let pvHtml = c.price ? 'R$&nbsp;' + c.price.toFixed(2).replace('.', ',') : '';
-      let pcHtml = '';
-      if (c.priceCard && c.priceCard !== c.price) {
-        pcHtml = 'ou R$&nbsp;' + c.priceCard.toFixed(2).replace('.', ',') + ' no cartão';
-      }
-      cardsHtml += '<div class="card"><div class="card-img">' + badge + fotoHtml +
-        '</div><div class="card-info"><div class="card-name">' + (c.name || '') +
-        '</div><div class="card-color">' + (c.color || '') +
-        '</div><div class="card-sizes">' + tamHtml +
-        '</div><div class="card-prices"><span class="price-main">' + pvHtml +
-        '</span><span class="price-card">' + pcHtml + '</span></div></div></div>';
-    });
-    const dataAtual = new Date().toLocaleDateString('pt-BR');
-    const html = '<!DOCTYPE html><html lang="pt-BR"><head>...' +
-      // [HTML completo do catálogo — ver linha original completa abaixo]
-      '</body></html>';
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'catalogo.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-    alert('\u2705 Catálogo gerado com ' + catalog.length + ' peças!\n\n' +
-      '\ud83d\udcc1 O arquivo "catalogo.html" foi baixado.\n\n' +
-      '\ud83d  Suba ele no seu GitHub para os clientes acessarem pelo link.');
-  });
 </script>
 <style>
   :root{
@@ -1173,7 +1109,8 @@
       </div>
       <button class="ghost-btn" id="btnInstallHelp" style="margin-bottom:14px;">Como instalar no celular</button>
       <button class="ghost-btn" id="btnOpenPriceTable" style="margin-bottom:14px;">Consultar tabela de preços</button>
-<button class="ghost-btn" id="btnGerarCatalogo" style="margin-bottom:14px;">📋 Gerar catálogo para clientes</button>
+<button class="ghost-btn" onclick="gerarCatalogoClientes()" style="margin-bottom:14px;">📋 Gerar catálogo para clientes</button>
+renderAll();
       <div class="label">Backup dos dados</div>
       <button class="ghost-btn" id="btnExportBackup">Exportar backup (.json)</button>
       <button class="ghost-btn" id="btnImportBackup">Importar backup (.json)</button>
@@ -2989,6 +2926,7 @@
 
   /* ================= INIT ================= */
   renderAll();
+function gerarCatalogoClientes(){var catalog=JSON.parse(localStorage.getItem('trama_catalogo_v1')||'[]');if(!catalog||catalog.length===0){alert('Nenhuma peca cadastrada!');return;}alert('Gerando catalogo com '+catalog.length+' pecas...');var cardsHtml='';for(var i=0;i<catalog.length;i++){var c=catalog[i];var tamHtml='';for(var j=0;j<c.sizes.length;j++){var s=c.sizes[j];if(s.qty>0){tamHtml+='<span class="sz ok">'+s.size+' ('+s.qty+')</span>';}else{tamHtml+='<span class="sz no">'+s.size+'</span>';}}var fotoHtml=c.photo?'<img src="'+c.photo+'">':'';var pvHtml=c.price?'R$ '+c.price.toFixed(2).replace(".",","):'';var pcHtml=c.priceCard?'ou R$ '+c.priceCard.toFixed(2).replace(".",",")+' cartao':'';cardsHtml+='<div class="card"><div class="card-img">'+fotoHtml+'</div><div class="card-info"><div class="card-name">'+(c.name||'')+'</div><div class="card-color">'+(c.color||'')+'</div><div class="card-sizes">'+tamHtml+'</div><div class="card-prices"><span class="price-main">'+pvHtml+'</span><span class="price-card">'+pcHtml+'</span></div></div></div>';}var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRAMA Catalogo</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#f5f5f5}.header{background:#1a1a1a;color:#fff;padding:40px 20px;text-align:center}.header h1{font-size:22px;letter-spacing:2px}.header p{color:#aaa;font-size:12px;margin-top:6px}.wpp-btn{display:inline-block;margin-top:16px;padding:12px 24px;background:#25d366;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:20px;max-width:1100px;margin:0 auto}.card{background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eee}.card-img{width:100%;height:260px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden}.card-img img{width:100%;height:100%;object-fit:cover}.card-info{padding:14px 16px}.card-name{font-size:15px;font-weight:600}.card-color{font-size:12px;color:#888;margin:4px 0 10px}.card-sizes{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}.sz{padding:3px 8px;border-radius:4px;font-size:11px;border:1px solid #e8e8e8}.sz.ok{background:#ecfdf5;color:#15803d}.sz.no{background:#fef2f2;color:#aaa;text-decoration:line-through}.card-prices{display:flex;gap:8px;align-items:baseline}.price-main{font-size:18px;font-weight:700}.price-card{font-size:12px;color:#888}.footer{text-align:center;padding:30px;color:#999;font-size:12px}@media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr);gap:10px;padding:12px}.card-img{height:170px}}</style></head><body><header class="header"><h1>TRAMA</h1><p>Catalogo de pecas</p><a href="https://wa.me/5532984701509?text=Ola!%20Vi%20o%20catalogo%20e%20quero%20saber%20mais!" class="wpp-btn" target="_blank">Chamar no WhatsApp</a></header><section class="grid">'+cardsHtml+'</section><footer class="footer"><p><b>TRAMA</b></p><p>Precos sujeitos a alteracao</p></footer></body></html>';var blob=new Blob([html],{type:"text/html"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="catalogo.html";document.body.appendChild(a);a.click();document.body.removeChild(a);}
 </script>
 
 </body>
