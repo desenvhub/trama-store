@@ -1399,6 +1399,14 @@ renderAll();
                 </div>
                 <input type="file" id="gPhotoInput" accept="image/*" style="display:none">
               </div>
+              <div id="extraPhotosSection" style="margin-top:10px">
+                <button type="button" id="btnAddExtraPhoto" class="ghost-btn" style="font-size:12px">📷 Adicionar fotos de detalhes</button>
+                <input type="file" id="extraPhotoInput" accept="image/*" multiple style="display:none">
+                <div id="extraPhotosThumbs" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              </div>
             </div>
             <div class="form-actions">
               <button class="btn btn-primary" id="btnSaveCatalog">Adicionar peça</button>
@@ -2380,7 +2388,9 @@ renderAll();
   const btnCancelEditCat = document.getElementById('btnCancelEditCat');
   const catFormTitle = document.getElementById('catFormTitle');
 
-  let currentCatalogPhotoData = null;
+let currentCatalogPhotoData = null;
+let currentCatalogExtraPhotos = [];
+let editingCatalogId = null;
   let editingCatalogId = null;
 
   // ---- linhas dinâmicas de tamanho/quantidade ----
