@@ -2951,13 +2951,58 @@
 // ===== GERAR CATÁLOGO PÚBLICO (HTML com dados embutidos) =====
 
 function gerarCatalogoPublico() {
-  // Pega as peças do localStorage (mesma chave do seu catálogo)
-  var pecas = JSON.parse(localStorage.getItem('pecas') || '[]');
+  var pecas = null;
+  var chaveUsada = '';
+  var todasChaves = Object.keys(localStorage);
 
-  if (pecas.length === 0) {
-    alert('⚠️ Nenhuma peça cadastrada! Cadastre peças no catálogo primeiro.');
+  for (var i = 0; i < todasChaves.length; i++) {
+    try {
+      var dados = JSON.parse(localStorage.getItem(todasChaves[i]));
+      if (Array.isArray(dados) && dados.length > 0 && dados.nome) {
+        pecas = dados;
+        chaveUsada = todasChaves[i];
+        break;
+      }
+    } catch(e) {}
+  }
+
+  if (!pecas || pecas.length === 0) {
+    alert('Nenhuma peça cadastrada! Cadastre peças no catálogo primeiro.
+
+Chaves encontradas: ' + todasChaves.join(', '));
     return;
   }
+
+  alert('Encontrei ' + pecas.length + ' peças na chave: ' + chaveUsada + '
+
+Gerando catálogo...');
+
+  var pecasPublicas = pecas.map(function(p) {
+    return {
+      nome: p.nome || '',
+      cor: p.cor || '',
+      precoVenda: p.precoVenda || p.precoVista || p.preco_venda || p.preco || '',
+      precoCartao: p.precoCartao || p.preco_cartao || '',
+      tamanhos: (p.tamanhos || []).map(function(t) {
+        return {
+          tamanho: t.tamanho || t.nome || '',
+          qtd: parseInt(t.qtd || t.quantidade || 0)
+        };
+      }),
+      foto: p.foto || (p.fotos && p.fotos.length > 0 ? p.fotos : '')
+    };
+  });
+
+  var html = gerarHTMLCatalogo(pecasPublicas);
+
+  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'catalogo.html';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
   // Prepara os dados SEM preço de custo
   var pecasPublicas = pecas.map(function(p) {
