@@ -927,6 +927,94 @@
   }
   .modal-close-bar .icon-btn{ background:var(--paper); }
 
+  /* ---- editor de foto (remocao de fundo) ---- */
+  .photo-editor-modal-box{ max-width:560px; }
+  .photo-editor-body{
+    padding:0 16px 6px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .photo-editor-canvas-wrap{
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    min-height:220px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background-color:#fff;
+    background-image:
+      linear-gradient(45deg,#e7e2d8 25%,transparent 25%),
+      linear-gradient(-45deg,#e7e2d8 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#e7e2d8 75%),
+      linear-gradient(-45deg,transparent 75%,#e7e2d8 75%);
+    background-size:22px 22px;
+    background-position:0 0, 0 11px, 11px -11px, -11px 0px;
+  }
+  #photoEditorCanvas{ max-width:100%; max-height:56vh; display:block; }
+  .photo-editor-loading{
+    position:absolute;
+    inset:0;
+    background:rgba(255,255,255,.9);
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    text-align:center;
+    padding:16px;
+  }
+  .photo-editor-loading.visible{ display:flex; }
+  .photo-editor-spinner{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    border:3px solid var(--line);
+    border-top-color:var(--bronze);
+    animation:photoEditorSpin .8s linear infinite;
+  }
+  @keyframes photoEditorSpin{ to{ transform:rotate(360deg); } }
+  #photoEditorLoadingText{
+    font-family:'Jost',sans-serif;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .photo-editor-controls{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .photo-editor-controls-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .photo-editor-hint{
+    font-size:11.5px;
+    color:var(--muted);
+    line-height:1.55;
+    margin:0;
+  }
+  .photo-edit-wand-btn{
+    position:absolute;
+    bottom:-6px;
+    left:-6px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--bronze);
+    color:#fff;
+    font-size:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    border:none;
+    padding:0;
+  }
+
   .install-modal-box{ background:#1C1916; }
   .install-modal-box .modal-close-bar .icon-btn{ background:#26221D; color:#FBF9F5; }
   .install-modal-content{
@@ -1733,6 +1821,7 @@
                 </div>
                 <input type="file" id="gPhotoInput" accept="image/*" style="display:none">
               </div>
+              <button type="button" id="gPhotoEditBtn" class="ghost-btn" style="font-size:12px;margin-top:8px;display:none">🪄 Editar / remover fundo</button>
               <div id="extraPhotosSection" style="margin-top:10px">
                 <button type="button" id="btnAddExtraPhoto" class="ghost-btn" style="font-size:12px">📷 Adicionar fotos de detalhes</button>
                 <input type="file" id="extraPhotoInput" accept="image/*" multiple style="display:none">
@@ -1861,6 +1950,43 @@
       <div class="icon-btn" id="closePhotoModal">✕</div>
     </div>
     <img id="photoModalImg" src="">
+  </div>
+</div>
+
+<!-- Modal editor de foto (remover fundo com IA, direto no navegador) -->
+<div class="modal-overlay" id="photoEditorModal">
+  <div class="modal-box photo-editor-modal-box">
+    <div class="modal-close-bar">
+      <div class="icon-btn" id="closePhotoEditorModal">✕</div>
+    </div>
+    <div class="photo-editor-body">
+      <div class="photo-editor-canvas-wrap">
+        <canvas id="photoEditorCanvas"></canvas>
+        <div class="photo-editor-loading" id="photoEditorLoading">
+          <div class="photo-editor-spinner"></div>
+          <div id="photoEditorLoadingText">Preparando...</div>
+        </div>
+      </div>
+      <div class="photo-editor-controls">
+        <div class="photo-editor-controls-row">
+          <button type="button" class="btn btn-primary" id="btnRemoverFundoIA" style="flex:1">🪄 Remover fundo automaticamente</button>
+          <button type="button" class="ghost-btn" id="btnRestaurarFotoOriginal" style="font-size:12px">↺ Foto original</button>
+        </div>
+        <div class="f-field" style="margin:0">
+          <label>Fundo final da foto</label>
+          <select id="photoEditorBgSelect">
+            <option value="white">Branco</option>
+            <option value="transparent">Transparente</option>
+            <option value="cream">Bege claro (fundo do catálogo)</option>
+          </select>
+        </div>
+        <p class="photo-editor-hint">Envie a foto e clique em "Remover fundo automaticamente". Na primeira vez pode demorar um pouco (baixa um modelo de IA, funciona 100% no seu navegador — nenhuma foto sai do seu celular/computador); nas próximas vezes fica bem mais rápido.</p>
+      </div>
+    </div>
+    <div class="modal-close-bar" style="justify-content:space-between;padding:10px 16px 16px">
+      <button type="button" class="btn btn-secondary" id="btnCancelPhotoEditor">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btnConfirmPhotoEditor">Usar esta foto</button>
+    </div>
   </div>
 </div>
 
@@ -2264,6 +2390,139 @@
       reader.readAsDataURL(file);
     });
   }
+
+  /* ===================================================================
+     Editor de foto: remoção de fundo com IA, rodando 100% no navegador
+     (nenhuma foto é enviada para servidor nenhum). Usa a biblioteca
+     @imgly/background-removal, carregada sob demanda via CDN só quando
+     o usuário clica em "Remover fundo automaticamente" — assim quem
+     nunca usa a função não baixa nada extra.
+     =================================================================== */
+  const photoEditorModal = document.getElementById('photoEditorModal');
+  const photoEditorCanvas = document.getElementById('photoEditorCanvas');
+  const photoEditorCtx = photoEditorCanvas.getContext('2d');
+  const photoEditorLoading = document.getElementById('photoEditorLoading');
+  const photoEditorLoadingText = document.getElementById('photoEditorLoadingText');
+  const photoEditorBgSelect = document.getElementById('photoEditorBgSelect');
+  const btnRemoverFundoIA = document.getElementById('btnRemoverFundoIA');
+  const btnRestaurarFotoOriginal = document.getElementById('btnRestaurarFotoOriginal');
+  const btnCancelPhotoEditor = document.getElementById('btnCancelPhotoEditor');
+  const btnConfirmPhotoEditor = document.getElementById('btnConfirmPhotoEditor');
+  const closePhotoEditorModalBtn = document.getElementById('closePhotoEditorModal');
+
+  const photoEditorState = { onConfirm: null, originalDataUrl: null };
+  let bgRemovalLibPromise = null;
+
+  function loadBgRemovalLib(){
+    if(!bgRemovalLibPromise){
+      bgRemovalLibPromise = import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
+    }
+    return bgRemovalLibPromise;
+  }
+
+  function openPhotoEditor(sourceDataUrl, onConfirm){
+    photoEditorState.onConfirm = onConfirm;
+    photoEditorState.originalDataUrl = null;
+    const img = new Image();
+    img.onload = ()=>{
+      const maxDim = 1280;
+      let { width, height } = img;
+      if(width > height && width > maxDim){
+        height = Math.round(height * (maxDim/width));
+        width = maxDim;
+      } else if(height > maxDim){
+        width = Math.round(width * (maxDim/height));
+        height = maxDim;
+      }
+      photoEditorCanvas.width = width;
+      photoEditorCanvas.height = height;
+      photoEditorCtx.clearRect(0, 0, width, height);
+      photoEditorCtx.drawImage(img, 0, 0, width, height);
+      photoEditorState.originalDataUrl = photoEditorCanvas.toDataURL('image/png');
+      photoEditorBgSelect.value = 'white';
+      photoEditorLoading.classList.remove('visible');
+      photoEditorModal.classList.add('visible');
+    };
+    img.onerror = ()=>{ showToast('Não foi possível abrir essa foto para edição.'); };
+    img.src = sourceDataUrl;
+  }
+
+  function closePhotoEditorModal(){
+    photoEditorModal.classList.remove('visible');
+    photoEditorLoading.classList.remove('visible');
+  }
+  closePhotoEditorModalBtn.addEventListener('click', closePhotoEditorModal);
+  btnCancelPhotoEditor.addEventListener('click', closePhotoEditorModal);
+  photoEditorModal.addEventListener('click', (e)=>{
+    if(e.target === photoEditorModal) closePhotoEditorModal();
+  });
+
+  btnRestaurarFotoOriginal.addEventListener('click', ()=>{
+    if(!photoEditorState.originalDataUrl) return;
+    const img = new Image();
+    img.onload = ()=>{
+      photoEditorCtx.clearRect(0, 0, photoEditorCanvas.width, photoEditorCanvas.height);
+      photoEditorCtx.drawImage(img, 0, 0);
+    };
+    img.src = photoEditorState.originalDataUrl;
+  });
+
+  btnRemoverFundoIA.addEventListener('click', async ()=>{
+    if(!photoEditorState.originalDataUrl) return;
+    photoEditorLoadingText.textContent = 'Preparando...';
+    photoEditorLoading.classList.add('visible');
+    try{
+      const mod = await loadBgRemovalLib();
+      const removeBackgroundFn = mod.removeBackground || mod.default;
+      const resultBlob = await removeBackgroundFn(photoEditorState.originalDataUrl, {
+        model: 'medium',
+        output: { format: 'image/png' },
+        progress: (key, current, total)=>{
+          if(total){
+            photoEditorLoadingText.textContent = 'Baixando modelo de IA... ' + Math.round((current/total)*100) + '%';
+          } else {
+            photoEditorLoadingText.textContent = 'Processando imagem...';
+          }
+        }
+      });
+      const url = URL.createObjectURL(resultBlob);
+      const img = new Image();
+      img.onload = ()=>{
+        photoEditorCtx.clearRect(0, 0, photoEditorCanvas.width, photoEditorCanvas.height);
+        photoEditorCtx.drawImage(img, 0, 0, photoEditorCanvas.width, photoEditorCanvas.height);
+        URL.revokeObjectURL(url);
+        photoEditorLoading.classList.remove('visible');
+      };
+      img.onerror = ()=>{
+        photoEditorLoading.classList.remove('visible');
+        showToast('Não foi possível processar essa imagem.');
+      };
+      img.src = url;
+    }catch(err){
+      console.error('Erro ao remover fundo:', err);
+      photoEditorLoading.classList.remove('visible');
+      showToast('Erro ao remover fundo. Verifique sua internet e tente novamente.');
+    }
+  });
+
+  btnConfirmPhotoEditor.addEventListener('click', ()=>{
+    const bgChoice = photoEditorBgSelect.value;
+    const out = document.createElement('canvas');
+    out.width = photoEditorCanvas.width;
+    out.height = photoEditorCanvas.height;
+    const outCtx = out.getContext('2d');
+    if(bgChoice !== 'transparent'){
+      outCtx.fillStyle = bgChoice === 'cream' ? '#F8F6F4' : '#FFFFFF';
+      outCtx.fillRect(0, 0, out.width, out.height);
+    }
+    outCtx.drawImage(photoEditorCanvas, 0, 0);
+    const isTransparent = bgChoice === 'transparent';
+    const finalDataUrl = isTransparent
+      ? out.toDataURL('image/png')
+      : out.toDataURL('image/jpeg', 0.88);
+    if(typeof photoEditorState.onConfirm === 'function') photoEditorState.onConfirm(finalDataUrl);
+    closePhotoEditorModal();
+  });
 
   function resetForm(){
     fCustomer.value = '';
@@ -2976,6 +3235,10 @@ let editingCatalogId = null;
     return { data: result };
   }
 
+  const gPhotoEditBtn = document.getElementById('gPhotoEditBtn');
+  function updateGPhotoEditBtnVisibility(){
+    gPhotoEditBtn.style.display = currentCatalogPhotoData ? 'inline-block' : 'none';
+  }
   gPhotoPickBtn.addEventListener('click', ()=> gPhotoInput.click());
   gPhotoInput.addEventListener('change', (e)=>{
     const file = e.target.files[0];
@@ -2984,6 +3247,7 @@ let editingCatalogId = null;
       currentCatalogPhotoData = dataUrl;
       gPhotoThumb.style.backgroundImage = `url(${dataUrl})`;
       gPhotoThumb.classList.add('has-photo');
+      updateGPhotoEditBtnVisibility();
     });
   });
   gPhotoRemove.addEventListener('click', (e)=>{
@@ -2992,9 +3256,18 @@ let editingCatalogId = null;
     gPhotoThumb.classList.remove('has-photo');
     gPhotoThumb.style.backgroundImage = '';
     gPhotoInput.value = '';
+    updateGPhotoEditBtnVisibility();
   });
   gPhotoThumb.addEventListener('click', ()=>{
     if(currentCatalogPhotoData) openPhotoModal(currentCatalogPhotoData);
+  });
+  gPhotoEditBtn.addEventListener('click', ()=>{
+    if(!currentCatalogPhotoData) return;
+    openPhotoEditor(currentCatalogPhotoData, (finalDataUrl)=>{
+      currentCatalogPhotoData = finalDataUrl;
+      gPhotoThumb.style.backgroundImage = `url(${finalDataUrl})`;
+      gPhotoThumb.classList.add('has-photo');
+    });
   });
 
   /* ==== Fotos de detalhes (extras / carrossel) ==== */
@@ -3022,7 +3295,21 @@ let editingCatalogId = null;
         renderExtraPhotosThumbs();
       });
 
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'photo-edit-wand-btn';
+      editBtn.title = 'Editar / remover fundo';
+      editBtn.textContent = '🪄';
+      editBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        openPhotoEditor(currentCatalogExtraPhotos[idx], (finalDataUrl)=>{
+          currentCatalogExtraPhotos[idx] = finalDataUrl;
+          renderExtraPhotosThumbs();
+        });
+      });
+
       thumb.appendChild(removeBtn);
+      thumb.appendChild(editBtn);
       extraPhotosThumbs.appendChild(thumb);
     });
   }
@@ -3058,6 +3345,7 @@ let editingCatalogId = null;
     gPhotoThumb.classList.remove('has-photo');
     gPhotoThumb.style.backgroundImage = '';
     gPhotoInput.value = '';
+    updateGPhotoEditBtnVisibility();
     currentCatalogExtraPhotos = [];
     renderExtraPhotosThumbs();
     editingCatalogId = null;
@@ -3149,6 +3437,7 @@ let editingCatalogId = null;
     updatePromoDiscountHint();
     populateSizeRows(piece.sizes || []);
     currentCatalogPhotoData = piece.photo || null;
+    updateGPhotoEditBtnVisibility();
     if(currentCatalogPhotoData){
       gPhotoThumb.style.backgroundImage = `url(${currentCatalogPhotoData})`;
       gPhotoThumb.classList.add('has-photo');
