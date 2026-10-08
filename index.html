@@ -5965,7 +5965,7 @@ function guessColorHex(name){
     });
     cardFees = next;
     try{ localStorage.setItem(CARD_FEES_KEY, JSON.stringify(cardFees)); }catch(e){ console.error(e); }
-    fillModeSelect(gCardMode, true);
+    fillModeSelect(gCardMode, false);
     autoFillCardPrice(false);
     updateCardHint();
     updateCostHint();
@@ -5975,7 +5975,7 @@ function guessColorHex(name){
     cardFees = JSON.parse(JSON.stringify(CARD_FEE_DEFAULTS));
     try{ localStorage.removeItem(CARD_FEES_KEY); }catch(e){}
     renderCardFeeInputs();
-    fillModeSelect(gCardMode, true);
+    fillModeSelect(gCardMode, false);
     updateCardHint();
     updateCostHint();
     showToast('Taxas restauradas para o padrão.');
@@ -6499,6 +6499,7 @@ let editingCatalogId = null;
     gPrice.value = '';
     gPriceCard.value = '';
     cardPriceAuto = false;
+    gCardMode.value = String(cardFees.defaultInst || 1);
     updateGProfitBox();
     gPromo.checked = false;
     gPromoOriginal.value = '';
@@ -6705,6 +6706,7 @@ let editingCatalogId = null;
     gPrice.value = piece.price != null ? piece.price : '';
     gPriceCard.value = piece.priceCard != null ? piece.priceCard : '';
     cardPriceAuto = false;
+    gCardMode.value = String(cardFees.defaultInst || 1);
     updateGProfitBox();
     gPromo.checked = !!piece.promo;
     gPromoOriginal.value = (piece.promo && piece.promoOriginal != null) ? piece.promoOriginal : '';
