@@ -5728,7 +5728,9 @@ function guessColorHex(name){
       return;
     }
     const profit = price - cost;
-    const margin = price > 0 ? (profit / price) * 100 : 0;
+    const margin = price > 0 ? (profit / price) * 100 : 0;   // sobre o preço de venda (usado só pro alerta)
+    const markup = cost > 0 ? (profit / cost) * 100 : null;  // sobre o custo (o que aparece pra você)
+    const markupTxt = ` (${markup === null ? '' : markup.toFixed(0) + '% sobre o custo · '}margem de ${margin.toFixed(0)}%)`;
     gProfitBox.style.display = 'block';
     let bg, fg, label;
     if(profit <= 0){
@@ -5736,10 +5738,10 @@ function guessColorHex(name){
       label = `⚠️ Prejuízo estimado: ${formatCurrencyG(profit)} — o preço à vista está igual ou abaixo do custo.`;
     } else if(margin < 25){
       bg = '#F7E9CC'; fg = '#8A6416';
-      label = `⚠️ Lucro estimado: ${formatCurrencyG(profit)} (margem de ${margin.toFixed(0)}%) — margem baixa, considere revisar o preço.`;
+      label = `⚠️ Lucro estimado: ${formatCurrencyG(profit)}${markupTxt} — lucro baixo, considere revisar o preço.`;
     } else {
       bg = '#E3EBDF'; fg = '#4F6B4A';
-      label = `✅ Lucro estimado: ${formatCurrencyG(profit)} (margem de ${margin.toFixed(0)}%)`;
+      label = `✅ Lucro estimado: ${formatCurrencyG(profit)}${markupTxt}`;
     }
     gProfitBox.style.background = bg;
     gProfitBox.style.color = fg;
