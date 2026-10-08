@@ -2124,8 +2124,12 @@
         <!-- Taxas da maquininha -->
         <div class="card" id="cardFeesCard">
           <div class="card-title">
-            <span class="collapsible-label catalog-config-title">Taxas da maquininha (cartão)</span>
+            <span id="cardFeesTitle" class="collapsible-label catalog-config-title">Taxas da maquininha (cartão)</span>
+            <button type="button" class="chev-toggle-btn" id="cardFeesToggleBtn" title="Mostrar/ocultar taxas">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
           </div>
+          <div class="collapsible-hidden" id="cardFeesBody">
           <div class="page-title-sub" style="margin-bottom:12px;">Usadas para sugerir o preço no cartão e descontar a taxa do lucro. Os valores iniciais são da InfinitePay (recebimento "Na Hora", conferidos em jul/2026). As taxas mudam conforme o plano e o faturamento, então confirme no app da InfinitePay e ajuste aqui. Ficam salvas neste aparelho.</div>
           <div id="cardFeesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;"></div>
           <div class="f-field" style="margin-top:12px;max-width:280px;">
@@ -2135,6 +2139,7 @@
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
             <button class="btn btn-primary" id="btnSaveCardFees">Salvar taxas</button>
             <button class="btn btn-secondary" id="btnResetCardFees">Restaurar padrão</button>
+          </div>
           </div>
         </div>
 
@@ -2797,6 +2802,11 @@
     document.getElementById('catalogConfigToggleBtn'),
     document.getElementById('catalogConfigBody'),
     document.getElementById('catalogConfigTitle')
+  );
+  setupCollapsible(
+    document.getElementById('cardFeesToggleBtn'),
+    document.getElementById('cardFeesBody'),
+    document.getElementById('cardFeesTitle')
   );
   const openMaintenance = setupCollapsible(
     document.getElementById('maintenanceToggleBtn'),
