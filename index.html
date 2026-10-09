@@ -5854,18 +5854,38 @@ function guessColorHex(name){
     inst: {1:4.20, 2:6.09, 3:7.01, 4:7.91, 5:8.80, 6:9.67, 7:12.59, 8:13.42, 9:14.25, 10:15.06, 11:15.87, 12:16.66},
     defaultInst: 1
   };
+  // Valores da 1ª versão (já corrigidos). Aparelhos que salvaram esses números sem
+  // querer (só clicando em "Salvar") passam a usar a tabela nova automaticamente.
+  var OLD_CARD_FEE_INST = {1:5.49, 2:10.89, 3:11.99, 4:12.59, 5:13.29, 6:13.99, 7:14.99, 8:15.59, 9:16.19, 10:16.89, 11:17.89, 12:18.29};
+  function normalizeCardFees(r){
+    if(!r || typeof r !== 'object' || !r.inst) return null;
+    const out = { debit: CARD_FEE_DEFAULTS.debit, inst: Object.assign({}, CARD_FEE_DEFAULTS.inst), defaultInst: Number(r.defaultInst) || 1 };
+    if(r.debit != null && !isNaN(Number(r.debit))) out.debit = Number(r.debit);
+    Object.keys(r.inst).forEach(k=>{ const v = Number(r.inst[k]); if(!isNaN(v) && v >= 0) out.inst[k] = v; });
+    return out;
+  }
+  function isOldDefaultCardFees(f){
+    return f && Number(f.debit) === 2.29 && Object.keys(OLD_CARD_FEE_INST).every(k => Number(f.inst[k]) === OLD_CARD_FEE_INST[k]);
+  }
   function loadCardFees(){
     try{
-      const r = JSON.parse(localStorage.getItem(CARD_FEES_KEY));
-      if(r && r.inst){
-        return { debit: r.debit != null ? r.debit : CARD_FEE_DEFAULTS.debit,
-                 inst: Object.assign({}, CARD_FEE_DEFAULTS.inst, r.inst),
-                 defaultInst: r.defaultInst || 1 };
+      const f = normalizeCardFees(JSON.parse(localStorage.getItem(CARD_FEES_KEY)));
+      if(f){
+        if(isOldDefaultCardFees(f)){
+          const fresh = JSON.parse(JSON.stringify(CARD_FEE_DEFAULTS));
+          fresh.defaultInst = f.defaultInst; // mantém só a escolha de parcelas
+          try{ localStorage.removeItem(CARD_FEES_KEY); }catch(e){}
+          return fresh;
+        }
+        return f;
       }
     }catch(e){}
     return JSON.parse(JSON.stringify(CARD_FEE_DEFAULTS));
   }
   var cardFees = loadCardFees();
+  // guarda se este aparelho tem taxas próprias salvas (pra mandar ao servidor uma única vez)
+  var cardFeesHadLocalCustom = false;
+  try{ cardFeesHadLocalCustom = !!localStorage.getItem(CARD_FEES_KEY); }catch(e){}
   function fmtPct(n){ return Number(n).toFixed(2).replace('.', ','); }
   function cardFeePct(mode){
     if(mode === 'debit') return Number(cardFees.debit) || 0;
@@ -5969,7 +5989,7 @@ function guessColorHex(name){
     autoFillCardPrice(false);
     updateCardHint();
     updateCostHint();
-    showToast('Taxas salvas neste aparelho.');
+    pushCardFees('Taxas salvas e sincronizadas em todos os seus aparelhos.');
   });
   document.getElementById('btnResetCardFees').addEventListener('click', ()=>{
     cardFees = JSON.parse(JSON.stringify(CARD_FEE_DEFAULTS));
@@ -5978,10 +5998,41 @@ function guessColorHex(name){
     fillModeSelect(gCardMode, false);
     updateCardHint();
     updateCostHint();
-    showToast('Taxas restauradas para o padrão.');
+    pushCardFees('Taxas restauradas para o padrão em todos os aparelhos.');
   });
   renderCardFeeInputs();
   fillModeSelect(gCardMode, false);
+
+  /* Taxas sincronizadas: ficam em config/cardFees no servidor, então computador e
+     celular usam sempre os mesmos números. Se o servidor não responder, continua
+     valendo a cópia deste aparelho. */
+  function pushCardFees(okMsg){
+    try{
+      configRef.child('cardFees').set(cardFees)
+        .then(()=> showToast(okMsg))
+        .catch(e=>{ console.error('Erro ao sincronizar taxas:', e); showToast('Taxas salvas só neste aparelho (não foi possível falar com o servidor).'); });
+    }catch(e){ console.error(e); showToast('Taxas salvas só neste aparelho.'); }
+  }
+  var cardFeesRemoteSeen = false;
+  configRef.child('cardFees').on('value', snap=>{
+    const remote = normalizeCardFees(snap.val());
+    if(!remote){
+      // nada no servidor ainda: se ESTE aparelho já tinha taxas próprias salvas, manda pro servidor (uma vez)
+      if(!cardFeesRemoteSeen && cardFeesHadLocalCustom){
+        try{ configRef.child('cardFees').set(cardFees); }catch(e){ console.error(e); }
+      }
+      cardFeesRemoteSeen = true;
+      return;
+    }
+    cardFeesRemoteSeen = true;
+    cardFees = remote;
+    try{ localStorage.setItem(CARD_FEES_KEY, JSON.stringify(cardFees)); }catch(e){}
+    renderCardFeeInputs();
+    fillModeSelect(gCardMode, true);
+    autoFillCardPrice(false);
+    updateCardHint();
+    updateCostHint();
+  }, e=> console.error('Erro ao ler taxas do servidor:', e));
 
   /* ================= CLIENTES ================= */
   const cliOpenSet = new Set();
@@ -7236,7 +7287,7 @@ document.addEventListener('DOMContentLoaded', function(){
       pagamentos: (document.getElementById('cfgPagamentos').value || '').trim() || CATALOG_CONFIG_DEFAULTS.pagamentos,
       politica: (document.getElementById('cfgPolitica').value || '').trim() || CATALOG_CONFIG_DEFAULTS.politica
     };
-    configRef.set(cfg).then(function(){
+    configRef.update(cfg).then(function(){
       var msg = document.getElementById('catalogConfigSavedMsg');
       msg.style.display = 'inline';
       setTimeout(function(){ msg.style.display = 'none'; }, 2500);
