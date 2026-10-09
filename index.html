@@ -2385,6 +2385,7 @@
                 </select>
                 <label class="promo-toggle-label" style="margin-top:0;"><input type="checkbox" id="catFilterJeans"> Somente jeans</label>
                 <button type="button" class="ghost-btn" id="btnExportCatalogCsv" style="font-size:12px;white-space:nowrap;">⬇ Exportar CSV</button>
+                <button type="button" class="btn btn-primary" id="btnShareClient" style="font-size:12px;white-space:nowrap;padding:7px 12px;">📤 Enviar para cliente</button>
               </div>
 
               <div class="table-wrap">
@@ -2541,6 +2542,26 @@
 </div>
 
 <!-- Modal foto -->
+<div class="modal-overlay" id="shareClientModal">
+  <div class="modal-box" style="max-width:440px;max-height:92vh;overflow:auto;">
+    <div class="modal-close-bar"><div class="icon-btn" id="closeShareClientModal">✕</div></div>
+    <div style="padding:0 20px 20px;display:flex;flex-direction:column;gap:12px;">
+      <div style="font-weight:600;font-size:16px;">Enviar peças para o cliente</div>
+      <div id="shareClientSummary" style="font-size:13px;color:var(--muted);line-height:1.5;"></div>
+      <div class="f-field" style="margin:0;"><label>Título da página</label><input type="text" id="shareClientTitle" placeholder="Ex: Peças no tamanho M"></div>
+      <label style="font-size:13px;display:flex;gap:8px;align-items:center;"><input type="checkbox" id="shareOnlyStock" checked> Só peças com estoque</label>
+      <label style="font-size:13px;display:flex;gap:8px;align-items:center;"><input type="checkbox" id="shareOnlySize" checked> Mostrar só o tamanho filtrado</label>
+      <label style="font-size:13px;display:flex;gap:8px;align-items:center;"><input type="checkbox" id="shareShowPrice" checked> Mostrar preços</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+        <button type="button" class="btn btn-primary" id="shareClientSend" style="width:100%;padding:10px;">📤 Compartilhar página (WhatsApp etc.)</button>
+        <button type="button" class="ghost-btn" id="shareClientDownload" style="width:100%;padding:9px;">⬇ Baixar arquivo</button>
+        <button type="button" class="ghost-btn" id="shareClientPreview" style="width:100%;padding:9px;">👁 Pré-visualizar</button>
+        <button type="button" class="ghost-btn" id="shareClientCopy" style="width:100%;padding:9px;">📋 Copiar lista em texto</button>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.5;">A página é uma foto do estoque de agora: o cliente toca na peça para ver as fotos e chama você no WhatsApp já com a peça e o tamanho escolhidos.</div>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="paymentModal">
   <div class="modal-box" style="max-width:400px;max-height:90vh;overflow:auto;">
     <div class="modal-close-bar">
@@ -6873,6 +6894,141 @@ let editingCatalogId = null;
       sizes.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
     if(sizes.includes(current)) catFilterSize.value = current;
   }
+
+  /* ==== Enviar peças filtradas para o cliente ==== */
+  (function(){
+    const modal = document.getElementById('shareClientModal');
+    const WPP = '5532984701509';
+    const escapeHtml = v => String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    function collect(){
+      const onlyStock = document.getElementById('shareOnlyStock').checked;
+      const onlySize = document.getElementById('shareOnlySize').checked;
+      const size = catFilterSize.value;
+      const out = [];
+      getFilteredCatalog().forEach(c=>{
+        let sizes = (c.sizes||[]).filter(x=>x && x.size);
+        if(onlyStock) sizes = sizes.filter(x=>Number(x.qty)>0);
+        if(size && onlySize) sizes = sizes.filter(x=>x.size===size);
+        if(!sizes.length) return;
+        out.push({c, sizes});
+      });
+      return out;
+    }
+    function defaultTitle(){
+      const size = catFilterSize.value;
+      const cat = catFilterCategory.value;
+      let t = 'Peças disponíveis';
+      if(cat) t = cat;
+      if(size) t += ' · tamanho ' + size;
+      return t;
+    }
+    function money(n){ return 'R$ ' + Number(n||0).toFixed(2).replace('.',','); }
+    function refresh(){
+      const n = collect().length;
+      document.getElementById('shareClientSummary').textContent = n
+        ? n + (n===1?' peça será enviada':' peças serão enviadas') + ' com os filtros atuais da lista.'
+        : 'Nenhuma peça com os filtros atuais. Ajuste os filtros na lista.';
+    }
+    function buildHtml(){
+      const items = collect();
+      const title = document.getElementById('shareClientTitle').value.trim() || defaultTitle();
+      const showPrice = document.getElementById('shareShowPrice').checked;
+      const d = new Date();
+      const dateStr = d.toLocaleDateString('pt-BR');
+      const cards = items.map(({c,sizes})=>{
+        const photos = [c.photo].concat(c.photos||[]).filter(Boolean).filter(u=>!String(u).startsWith('data:'));
+        const sz = sizes.map(x=>'<span class="sz" data-s="'+escapeHtml(x.size)+'">'+escapeHtml(x.size)+'</span>').join('');
+        let price = '';
+        if(showPrice && c.price!=null && c.price!==''){
+          const promo = c.promo && c.promoOriginal && c.promoOriginal > c.price;
+          price = '<div class="pr">' + (promo ? '<s>'+money(c.promoOriginal)+'</s> ' : '') + '<b>'+money(c.price)+'</b> <small>à vista</small>'
+            + ((c.priceCard!=null && c.priceCard!=='' && Number(c.priceCard)!==Number(c.price)) ? '<div class="pc">'+money(c.priceCard)+' no cartão</div>' : '') + '</div>';
+        }
+        const label = c.name + (c.color ? ' ('+c.color+')' : '');
+        return '<div class="card" data-label="'+escapeHtml(label)+'" data-photos="'+escapeHtml(JSON.stringify(photos))+'">'
+          + '<div class="ph">'+(photos[0] ? '<img loading="lazy" src="'+escapeHtml(photos[0])+'" alt="">' : '<div class="noph">sem foto</div>')+'</div>'
+          + '<div class="bd"><div class="nm">'+escapeHtml(c.name)+'</div>'
+          + (c.color ? '<div class="cl">'+escapeHtml(c.color)+'</div>' : '')
+          + '<div class="szs">'+sz+'</div>'+price
+          + '<button class="wa">Quero essa peça</button></div></div>';
+      }).join('');
+      return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Trama Store - '+escapeHtml(title)+'</title><style>'
+        + '*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6f4f1;color:#222}'
+        + 'header{padding:18px 16px 8px;text-align:center}h1{margin:0;font-size:20px}header p{margin:4px 0 0;color:#777;font-size:12.5px}'
+        + '.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px;max-width:900px;margin:0 auto}@media(min-width:700px){.grid{grid-template-columns:repeat(3,1fr)}}'
+        + '.card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;flex-direction:column}'
+        + '.ph{aspect-ratio:3/4;background:#eee;cursor:zoom-in}.ph img{width:100%;height:100%;object-fit:cover;display:block}.noph{height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:12px}'
+        + '.bd{padding:10px;display:flex;flex-direction:column;gap:5px;flex:1}.nm{font-weight:600;font-size:14px}.cl{font-size:12px;color:#777}'
+        + '.szs{display:flex;flex-wrap:wrap;gap:4px}.sz{border:1px solid #222;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600}'
+        + '.pr{font-size:14px}.pr s{color:#999;font-size:12px}.pr small{color:#777;font-size:11px}.pc{font-size:11.5px;color:#777}'
+        + '.wa{margin-top:auto;border:0;background:#25a244;color:#fff;border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer}'
+        + '#lb{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;flex-direction:column;z-index:9}#lb.on{display:flex}'
+        + '#lbs{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory}#lbs img{flex:0 0 100%;width:100%;height:100%;object-fit:contain;scroll-snap-align:center}'
+        + '#lbx{position:absolute;top:10px;right:14px;color:#fff;font-size:28px;cursor:pointer;z-index:2}'
+        + 'footer{text-align:center;color:#999;font-size:11.5px;padding:16px}'
+        + '</style></head><body><header><h1>'+escapeHtml(title)+'</h1><p>Trama Store · disponibilidade em '+dateStr+'</p></header>'
+        + '<div class="grid">'+cards+'</div><footer>Peças podem ser vendidas a qualquer momento — confirme comigo no WhatsApp.</footer>'
+        + '<div id="lb"><div id="lbx">✕</div><div id="lbs"></div></div>'
+        + '<script>(function(){var N='+JSON.stringify(WPP)+';var sel={};'
+        + 'document.querySelectorAll(".card").forEach(function(card,i){'
+        +   'card.querySelectorAll(".sz").forEach(function(b){b.addEventListener("click",function(){card.querySelectorAll(".sz").forEach(function(x){x.style.background="";x.style.color=""});b.style.background="#222";b.style.color="#fff";sel[i]=b.getAttribute("data-s")})});'
+        +   'var only=card.querySelectorAll(".sz");if(only.length===1){only[0].style.background="#222";only[0].style.color="#fff";sel[i]=only[0].getAttribute("data-s")}'
+        +   'card.querySelector(".ph").addEventListener("click",function(){var ph=JSON.parse(card.getAttribute("data-photos")||"[]");if(!ph.length)return;var s=document.getElementById("lbs");s.innerHTML=ph.map(function(u){return "<img src=\\""+u.replace(/\\"/g,"")+"\\">"}).join("");document.getElementById("lb").className="on"});'
+        +   'card.querySelector(".wa").addEventListener("click",function(){var t="Oi! Tenho interesse nessa peça: "+card.getAttribute("data-label")+(sel[i]?" — tamanho "+sel[i]:"");window.open("https://wa.me/"+N+"?text="+encodeURIComponent(t),"_blank")});'
+        + '});'
+        + 'function cl(){document.getElementById("lb").className=""}document.getElementById("lbx").onclick=cl;'
+        + '})();<' + '/script></body></html>';
+    }
+    function buildText(){
+      const items = collect();
+      const title = document.getElementById('shareClientTitle').value.trim() || defaultTitle();
+      const showPrice = document.getElementById('shareShowPrice').checked;
+      return '*' + title + '*\n\n' + items.map(({c,sizes})=>
+        '• ' + c.name + (c.color?' – '+c.color:'') + ' – ' + sizes.map(x=>x.size).join(', ')
+        + (showPrice && c.price!=null && c.price!=='' ? ' – ' + money(c.price) : '')).join('\n');
+    }
+    function fileName(){
+      return 'trama-' + (defaultTitle().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'pecas') + '.html';
+    }
+    function ensure(){ if(!collect().length){ showToast('Nenhuma peça com esses filtros.'); return false; } return true; }
+    document.getElementById('btnShareClient').addEventListener('click', ()=>{
+      document.getElementById('shareClientTitle').value = defaultTitle();
+      document.getElementById('shareOnlySize').parentElement.style.display = catFilterSize.value ? 'flex' : 'none';
+      refresh(); modal.classList.add('visible');
+    });
+    document.getElementById('closeShareClientModal').addEventListener('click', ()=> modal.classList.remove('visible'));
+    modal.addEventListener('click', e=>{ if(e.target===modal) modal.classList.remove('visible'); });
+    ['shareOnlyStock','shareOnlySize'].forEach(id=> document.getElementById(id).addEventListener('change', refresh));
+    document.getElementById('shareClientPreview').addEventListener('click', ()=>{
+      if(!ensure()) return;
+      const url = URL.createObjectURL(new Blob([buildHtml()],{type:'text/html'}));
+      window.open(url,'_blank');
+    });
+    document.getElementById('shareClientDownload').addEventListener('click', ()=>{
+      if(!ensure()) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([buildHtml()],{type:'text/html'}));
+      a.download = fileName(); document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    });
+    document.getElementById('shareClientSend').addEventListener('click', async ()=>{
+      if(!ensure()) return;
+      const file = new File([buildHtml()], fileName(), {type:'text/html'});
+      try{
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          await navigator.share({files:[file], title: 'Trama Store'});
+          return;
+        }
+      }catch(e){ if(e && e.name==='AbortError') return; }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      showToast('Arquivo baixado — anexe no WhatsApp.');
+    });
+    document.getElementById('shareClientCopy').addEventListener('click', async ()=>{
+      if(!ensure()) return;
+      try{ await navigator.clipboard.writeText(buildText()); showToast('Lista copiada!'); }
+      catch(e){ window.prompt('Copie a lista:', buildText()); }
+    });
+  })();
 
   /* ==== Render tabela catálogo ==== */
   const catTbody = document.getElementById('catalogTableBody');
