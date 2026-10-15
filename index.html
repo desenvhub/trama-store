@@ -7352,7 +7352,7 @@ function catalogShareAdminCode(){
   btn.style.display = 'inline-flex';
   btn.style.alignItems = 'center';
 
-  var BASE_KEY = 'trama_catalog_public_base';
+  var BASE_KEY = 'trama_catalog_public_base_v2';
   function checked(cls){ return Array.prototype.map.call(document.querySelectorAll('.'+cls+':checked'), function(e){ return e.value; }); }
   function labelOf(cls){ return Array.prototype.map.call(document.querySelectorAll('.'+cls+':checked'), function(e){ var l = e.closest('label'); return l ? l.textContent.trim() : e.value; }); }
   function defaultBase(){
