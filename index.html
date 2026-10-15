@@ -7356,7 +7356,7 @@ function catalogShareAdminCode(){
   function checked(cls){ return Array.prototype.map.call(document.querySelectorAll('.'+cls+':checked'), function(e){ return e.value; }); }
   function labelOf(cls){ return Array.prototype.map.call(document.querySelectorAll('.'+cls+':checked'), function(e){ var l = e.closest('label'); return l ? l.textContent.trim() : e.value; }); }
   function defaultBase(){
-    var b = (typeof CATALOG_PUBLIC_BASE !== 'undefined') ? CATALOG_PUBLIC_BASE : '';
+    var b = 'https://desenvhub.github.io/catalogotramastore/';
     try{ var saved = localStorage.getItem(BASE_KEY); if(saved) b = saved; }catch(e){}
     return b;
   }
@@ -7390,14 +7390,14 @@ function catalogShareAdminCode(){
   sheet.innerHTML = '<div style="background:#fff;width:100%;max-width:460px;border-radius:16px 16px 0 0;padding:18px;display:flex;flex-direction:column;gap:10px;font-family:system-ui,sans-serif;max-height:92vh;overflow:auto">'
     + '<div style="font-weight:700;font-size:16px">Enviar seleção para o cliente</div>'
     + '<div id="shSum" style="font-size:13px;color:#666;line-height:1.5"></div>'
-    + '<label style="font-size:12px;color:#888">Endereço do seu catálogo (catalogo.html)</label>'
-    + '<input id="shBase" type="text" inputmode="url" style="padding:9px;border:1px solid #ccc;border-radius:8px;font-size:13px">'
+    + '<label style="font-size:12px;color:#888">Link do seu catálogo (o mesmo que você manda aos clientes)</label>'
+    + '<input id="shBase" type="text" inputmode="url" placeholder="Cole aqui o link que você usa para mandar o catálogo" style="padding:9px;border:1px solid #ccc;border-radius:8px;font-size:13px">'
     + '<label style="font-size:12px;color:#888">Link que o cliente vai receber</label>'
     + '<textarea id="shLink" readonly rows="3" style="padding:9px;border:1px solid #ccc;border-radius:8px;font-size:12px;background:#f8f8f8;word-break:break-all"></textarea>'
     + '<button id="shSend" style="padding:11px;border:0;border-radius:9px;background:#25a244;color:#fff;font-weight:700;font-size:14px">📤 Enviar link (WhatsApp etc.)</button>'
     + '<button id="shCopy" style="padding:10px;border:1px solid #ccc;border-radius:9px;background:#fff;font-size:13px">📋 Copiar link</button>'
     + '<button id="shOpen" style="padding:10px;border:1px solid #ccc;border-radius:9px;background:#fff;font-size:13px">👁 Abrir para conferir</button>'
-    + '<div style="font-size:11.5px;color:#888;line-height:1.5">O cliente abre o catálogo de verdade (fotos, detalhes, favoritos), já filtrado. Ele pode tirar o filtro e ver o resto. Precisa do catalogo.html atualizado no seu site.</div>'
+    + '<div style="font-size:11.5px;color:#888;line-height:1.5">O cliente abre o catálogo de verdade (fotos, detalhes, favoritos), já filtrado. Ele pode tirar o filtro e ver o resto. Precisa do catálogo atualizado no seu site (gere de novo em Gerar catálogo e suba).</div>'
     + '<button id="shClose" style="padding:8px;border:0;background:none;color:#888;font-size:13px">Fechar</button></div>';
   document.body.appendChild(sheet);
   function q(id){ return sheet.querySelector('#'+id); }
@@ -7407,11 +7407,11 @@ function catalogShareAdminCode(){
       ? titleNow() + ' — ' + n + (n === 1 ? ' peça aparecendo' : ' peças aparecendo') + ' com os filtros de agora. O link leva esses mesmos filtros.'
       : 'Nenhuma peça aparecendo. Aplique os filtros (ex.: Tamanho M) e abra de novo.';
     var base = q('shBase').value.trim();
-    q('shLink').value = base ? buildLink(base) : 'Preencha o endereço do catálogo acima.';
+    q('shLink').value = base ? buildLink(base) : 'Cole acima o link do seu catálogo.';
   }
   function linkOk(){
     var base = q('shBase').value.trim();
-    if(!/^https?:\/\//i.test(base)){ alert('Cole o endereço do seu catálogo (começa com https://), o mesmo que você usa para mandar aos clientes.'); return null; }
+    if(!/^https?:\/\//i.test(base)){ alert('Cole o link do seu catálogo (começa com https://): o mesmo que você usa para mandar aos clientes.'); return null; }
     try{ localStorage.setItem(BASE_KEY, base); }catch(e){}
     return buildLink(base);
   }
