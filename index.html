@@ -705,6 +705,32 @@
     cursor:pointer;
     transition:opacity .15s, background .15s;
   }
+
+  .sort-rules{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .sort-chips{ display:flex; flex-wrap:wrap; gap:6px; max-height:260px; overflow:auto; }
+  .sort-chip{ display:inline-flex; align-items:center; gap:6px; padding:5px 6px 5px 11px; border:1px solid var(--line); border-radius:999px; background:var(--card); font-size:13px; color:var(--ink); }
+  .sort-chip button{ border:0; background:var(--paper-deep); color:var(--muted); width:20px; height:20px; border-radius:50%; cursor:pointer; font-size:11px; line-height:1; }
+  .sort-chip.manual{ border-style:dashed; }
+  #srtStage{ position:fixed; inset:0; z-index:10000; display:none; flex-direction:column; align-items:center; background:radial-gradient(ellipse at top,#2b2318 0%,#14110d 70%); color:#f4ead7; font-family:inherit; overflow:auto; padding:22px 16px 30px; }
+  #srtStage.open{ display:flex; }
+  #srtStage .st-brand{ letter-spacing:.35em; font-size:13px; color:#c7a567; text-transform:uppercase; margin-top:6px; }
+  #srtStage .st-title{ font-size:clamp(26px,5vw,44px); font-weight:700; margin:6px 0 4px; text-align:center; }
+  #srtStage .st-rule{ font-size:clamp(13px,2.2vw,17px); color:#d8c9a8; text-align:center; max-width:760px; line-height:1.5; }
+  #srtStage .st-names{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:980px; margin:18px 0 6px; max-height:26vh; overflow:auto; }
+  #srtStage .st-name{ padding:4px 11px; border:1px solid #4a3d28; border-radius:999px; font-size:13px; color:#e9dcc0; background:rgba(255,255,255,.04); }
+  #srtStage .st-name.won{ opacity:.35; text-decoration:line-through; }
+  #srtStage .st-wheel{ margin:auto 0; min-height:120px; display:flex; align-items:center; justify-content:center; font-size:clamp(34px,9vw,92px); font-weight:800; text-align:center; padding:10px 16px; word-break:break-word; }
+  #srtStage .st-wheel.rolling{ color:#e9dcc0; filter:blur(.4px); }
+  #srtStage .st-wheel.final{ color:#ffd98a; text-shadow:0 0 30px rgba(255,200,90,.45); animation:srtPop .7s ease; }
+  @keyframes srtPop{ 0%{transform:scale(.6);opacity:0} 60%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+  #srtStage .st-winners{ display:flex; flex-direction:column; gap:6px; align-items:center; margin:6px 0 12px; font-size:clamp(18px,3.4vw,28px); font-weight:700; color:#ffd98a; }
+  #srtStage .st-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
+  #srtStage .st-btn{ border:0; border-radius:12px; padding:14px 30px; font-size:18px; font-weight:800; cursor:pointer; background:#c7a567; color:#1c1710; font-family:inherit; }
+  #srtStage .st-btn.ghost{ background:transparent; border:1px solid #6b5a3a; color:#e9dcc0; font-size:14px; font-weight:600; padding:11px 18px; }
+  #srtStage .st-btn:disabled{ opacity:.5; cursor:default; }
+  #srtStage .st-close{ position:absolute; top:12px; right:16px; font-size:26px; color:#d8c9a8; cursor:pointer; background:none; border:0; }
+  #srtConfetti{ position:fixed; inset:0; pointer-events:none; z-index:10001; display:none; }
+
   .btn-primary{
     background:var(--bronze);
     color:#fff;
@@ -1683,6 +1709,10 @@
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17.5 14c2.4 0 4 1.7 4 4.5"/></svg></span>
         Clientes
       </div>
+      <div class="nav-item" data-page="sorteio">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M12 8v13"/><path d="M3 12h18"/><path d="M12 8c-2.5 0-4.5-1-4.5-3a2 2 0 013.4-1.4L12 5l1.1-1.4A2 2 0 0116.5 5c0 2-2 3-4.5 3z"/></svg></span>
+        Sorteio
+      </div>
       <div class="nav-item" data-page="promocoes">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.59 13.41L11 3.83A2 2 0 009.59 3H4a1 1 0 00-1 1v5.59a2 2 0 00.59 1.41l9.58 9.58a2 2 0 002.82 0l4.6-4.6a2 2 0 000-2.82z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span>
         Promoção
@@ -2454,6 +2484,72 @@
       </div>
     </div>
 
+    <div class="page" id="page-sorteio">
+      <div class="page-vendas-inner">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Sorteio</h1>
+            <div class="page-title-sub">Defina as regras na hora, confira quem está participando (só os nomes) e sorteie em tela cheia — ideal para gravar o vídeo.</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title"><span class="catalog-config-title">1. Regras do sorteio</span></div>
+          <div class="sort-rules">
+            <div class="f-field"><label>Quem participa — compras feitas em</label>
+              <select id="srtPeriod">
+                <option value="month">Este mês</option>
+                <option value="lastmonth">Mês passado</option>
+                <option value="30d">Últimos 30 dias</option>
+                <option value="year">Este ano</option>
+                <option value="all">Todo o histórico</option>
+                <option value="custom">Período personalizado…</option>
+              </select></div>
+            <div class="f-field" id="srtCustomWrap" style="display:none;"><label>De / Até</label>
+              <div style="display:flex;gap:6px;"><input type="date" id="srtFrom"><input type="date" id="srtTo"></div></div>
+            <div class="f-field"><label>Quais compras valem</label>
+              <select id="srtPaid">
+                <option value="all">Todas as compras</option>
+                <option value="paid">Só compras já pagas</option>
+              </select></div>
+            <div class="f-field"><label>Mínimo de compras no período</label><input type="number" id="srtMinPurchases" min="1" step="1" value="1"></div>
+            <div class="f-field"><label>Mínimo gasto no período (R$)</label><input type="number" id="srtMinSpent" min="0" step="0.01" value="0"></div>
+            <div class="f-field"><label>Chances de cada cliente</label>
+              <select id="srtWeight">
+                <option value="one">1 chance por cliente</option>
+                <option value="purchases">1 chance por compra feita</option>
+              </select></div>
+            <div class="f-field"><label>Quantas ganhadoras</label><input type="number" id="srtWinners" min="1" step="1" value="1"></div>
+            <div class="f-field"><label>Nome na tela</label>
+              <select id="srtNameMode">
+                <option value="full">Nome completo</option>
+                <option value="first">Só o primeiro nome</option>
+              </select></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title"><span class="catalog-config-title">2. Quem está participando</span></div>
+          <div id="srtSummary" style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;line-height:1.5;"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <input type="text" id="srtManualName" placeholder="Adicionar nome manualmente (opcional)" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:14px;font-family:inherit;">
+            <button type="button" class="btn btn-secondary" id="srtManualAdd">Adicionar</button>
+          </div>
+          <div id="srtParticipants" class="sort-chips"></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px;">Toque no ✕ de um nome para tirá-lo do sorteio (ex.: familiares). A lista mostra só nomes, sem valores.</div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+          <button type="button" class="btn btn-primary" id="srtStart" style="padding:12px 22px;font-size:15px;">🎁 Abrir sorteio em tela cheia</button>
+        </div>
+
+        <div class="card" id="srtHistoryCard" style="display:none;">
+          <div class="card-title"><span class="catalog-config-title">Sorteios anteriores (neste aparelho)</span></div>
+          <div id="srtHistory" style="display:flex;flex-direction:column;gap:8px;font-size:13px;"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="page" id="page-promocoes">
       <div class="page-vendas-inner">
         <div class="page-title">Promoção</div>
@@ -2541,6 +2637,20 @@
 </div>
 
 <!-- Modal foto -->
+<div id="srtStage">
+  <button type="button" class="st-close" id="srtClose" aria-label="Fechar">✕</button>
+  <div class="st-brand">Trama Store</div>
+  <div class="st-title" id="stTitle">Sorteio</div>
+  <div class="st-rule" id="stRule"></div>
+  <div class="st-names" id="stNames"></div>
+  <div class="st-wheel" id="stWheel">🎁</div>
+  <div class="st-winners" id="stWinners"></div>
+  <div class="st-actions">
+    <button type="button" class="st-btn" id="stDraw">Sortear!</button>
+    <button type="button" class="st-btn ghost" id="stReset" style="display:none;">Refazer do zero</button>
+  </div>
+</div>
+<canvas id="srtConfetti"></canvas>
 <div class="modal-overlay" id="paymentModal">
   <div class="modal-box" style="max-width:400px;max-height:90vh;overflow:auto;">
     <div class="modal-close-bar">
@@ -2686,7 +2796,7 @@
 <script>
   /* ================= NAVEGAÇÃO ================= */
   const navItems = document.querySelectorAll('.nav-item[data-page]');
-  const pages = { vendas: document.getElementById('page-vendas'), catalogo: document.getElementById('page-catalogo'), promocoes: document.getElementById('page-promocoes'), clientes: document.getElementById('page-clientes'), arte: document.getElementById('page-arte') };
+  const pages = { vendas: document.getElementById('page-vendas'), catalogo: document.getElementById('page-catalogo'), promocoes: document.getElementById('page-promocoes'), clientes: document.getElementById('page-clientes'), sorteio: document.getElementById('page-sorteio'), arte: document.getElementById('page-arte') };
   let promoLoaded = false;
 
   /* Ponte com a Arte Promocional (iframe): quando a pré-visualização em tela
@@ -2715,6 +2825,7 @@
       const key = item.dataset.page;
       pages[key].classList.add('active');
       if(key === 'clientes' && typeof renderClientes === 'function') renderClientes();
+      if(key === 'sorteio' && typeof renderSorteio === 'function') renderSorteio();
       if(key === 'arte' && !promoLoaded){
         const html = decodeURIComponent(escape(atob(PROMO_HTML_B64)));
         document.getElementById('promoFrame').srcdoc = html;
@@ -6070,6 +6181,230 @@ function guessColorHex(name){
     updateCardHint();
     updateCostHint();
   }, e=> console.error('Erro ao ler taxas do servidor:', e));
+
+  /* ================= SORTEIO ================= */
+  const SORTEIO_HIST_KEY = 'trama_sorteios_v1';
+  let srtExcluded = new Set();      // chaves de clientes tirados da lista
+  let srtManual = [];               // nomes adicionados na mão
+  let srtDrawn = [];                // ganhadoras já sorteadas nesta rodada (chaves)
+  const srtEl = id => document.getElementById(id);
+
+  function srtPeriodRange(){
+    const v = srtEl('srtPeriod').value;
+    const now = new Date();
+    const iso = d => { const l = new Date(d.getTime() - d.getTimezoneOffset()*60000); return l.toISOString().slice(0,10); };
+    const y = now.getFullYear(), m = now.getMonth();
+    if(v === 'month') return { from: iso(new Date(y,m,1)), to: iso(new Date(y,m+1,0)), label: 'compras de ' + now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}) };
+    if(v === 'lastmonth'){ const d1 = new Date(y,m-1,1); return { from: iso(d1), to: iso(new Date(y,m,0)), label: 'compras de ' + d1.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}) }; }
+    if(v === '30d') return { from: iso(new Date(now.getTime()-29*86400000)), to: iso(now), label: 'compras dos últimos 30 dias' };
+    if(v === 'year') return { from: y+'-01-01', to: y+'-12-31', label: 'compras de ' + y };
+    if(v === 'custom'){ const f = srtEl('srtFrom').value || '0000-01-01', t = srtEl('srtTo').value || '9999-12-31';
+      return { from: f, to: t, label: 'compras de ' + (srtEl('srtFrom').value ? formatDateBR(f) : 'o início') + ' a ' + (srtEl('srtTo').value ? formatDateBR(t) : 'hoje') }; }
+    return { from: '0000-01-01', to: '9999-12-31', label: 'todas as compras já feitas' };
+  }
+  function srtPretty(name){ return String(name).trim().replace(/\s+/g,' ').toLowerCase().replace(/(^|\s)(\S)/g, (m0,sp,ch)=> sp + ch.toUpperCase()); }
+  function srtDisplayName(name){
+    const n = srtPretty(name);
+    return srtEl('srtNameMode').value === 'first' ? n.split(' ')[0] : n;
+  }
+  function srtRules(){
+    const r = srtPeriodRange();
+    return {
+      range: r,
+      onlyPaid: srtEl('srtPaid').value === 'paid',
+      minPurchases: Math.max(1, parseInt(srtEl('srtMinPurchases').value,10) || 1),
+      minSpent: Math.max(0, parseFloat(srtEl('srtMinSpent').value) || 0),
+      weightByPurchases: srtEl('srtWeight').value === 'purchases',
+      winners: Math.max(1, parseInt(srtEl('srtWinners').value,10) || 1)
+    };
+  }
+  function srtBuildPool(){
+    const rules = srtRules();
+    const map = {};
+    sales.forEach(sale=>{
+      const name = (sale.customer || '').trim();
+      if(!name) return;
+      if(sale.date < rules.range.from || sale.date > rules.range.to) return;
+      if(rules.onlyPaid && !isSalePaid(sale)) return;
+      const key = name.toLowerCase().replace(/\s+/g,' ');
+      if(!map[key]) map[key] = { key, name: srtPretty(name), purchases: 0, spent: 0, manual: false };
+      map[key].purchases += 1;
+      map[key].spent += Number(sale.value) || 0;
+    });
+    let list = Object.values(map).filter(c => c.purchases >= rules.minPurchases && c.spent >= rules.minSpent);
+    srtManual.forEach(n=>{
+      const key = n.toLowerCase().replace(/\s+/g,' ');
+      if(!list.some(c=>c.key===key)) list.push({ key, name: srtPretty(n), purchases: 1, spent: 0, manual: true });
+    });
+    list = list.filter(c => !srtExcluded.has(c.key));
+    list.sort((a,b)=> a.name.localeCompare(b.name,'pt-BR'));
+    return { rules, list };
+  }
+  function srtRuleText(rules, count){
+    const parts = [rules.range.label];
+    if(rules.onlyPaid) parts.push('somente compras pagas');
+    if(rules.minPurchases > 1) parts.push('mínimo de ' + rules.minPurchases + ' compras');
+    if(rules.minSpent > 0) parts.push('mínimo de ' + formatCurrency(rules.minSpent));
+    parts.push(rules.weightByPurchases ? 'cada compra vale 1 chance' : '1 chance por cliente');
+    return parts.join(' · ') + ' — ' + count + (count === 1 ? ' participante' : ' participantes');
+  }
+  function srtRandInt(n){
+    if(n <= 1) return 0;
+    const buf = new Uint32Array(1), lim = Math.floor(4294967296 / n) * n;
+    do{ crypto.getRandomValues(buf); }while(buf[0] >= lim);
+    return buf[0] % n;
+  }
+  function srtPick(list, rules){
+    // monta "bilhetes": 1 por cliente, ou 1 por compra
+    const tickets = [];
+    list.forEach(c=>{ const k = rules.weightByPurchases ? Math.max(1,c.purchases) : 1; for(let i=0;i<k;i++) tickets.push(c); });
+    return tickets[srtRandInt(tickets.length)];
+  }
+
+  function renderSorteio(){
+    const { rules, list } = srtBuildPool();
+    srtEl('srtCustomWrap').style.display = srtEl('srtPeriod').value === 'custom' ? '' : 'none';
+    srtEl('srtSummary').textContent = srtRuleText(rules, list.length) + '.';
+    const box = srtEl('srtParticipants');
+    box.innerHTML = '';
+    if(!list.length){ box.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nenhuma cliente se encaixa nessas regras.</div>'; }
+    list.forEach(c=>{
+      const chip = document.createElement('span');
+      chip.className = 'sort-chip' + (c.manual ? ' manual' : '');
+      chip.appendChild(document.createTextNode(srtDisplayName(c.name)));
+      const x = document.createElement('button');
+      x.type = 'button'; x.textContent = '✕'; x.title = 'Tirar do sorteio';
+      x.addEventListener('click', ()=>{
+        if(c.manual) srtManual = srtManual.filter(n => n.toLowerCase().replace(/\s+/g,' ') !== c.key);
+        else srtExcluded.add(c.key);
+        renderSorteio();
+      });
+      chip.appendChild(x);
+      box.appendChild(chip);
+    });
+    srtEl('srtStart').disabled = !list.length;
+    renderSorteioHistory();
+  }
+  function srtLoadHistory(){ try{ return JSON.parse(localStorage.getItem(SORTEIO_HIST_KEY) || '[]'); }catch(e){ return []; } }
+  function renderSorteioHistory(){
+    const h = srtLoadHistory().slice().reverse();
+    srtEl('srtHistoryCard').style.display = h.length ? '' : 'none';
+    srtEl('srtHistory').innerHTML = h.slice(0,10).map(x=>
+      `<div style="border-bottom:1px solid var(--line);padding-bottom:6px;"><strong>${escapeHtml(formatDateBR(x.date))}</strong> — ${escapeHtml((x.winners||[]).join(', '))}<div style="color:var(--muted);font-size:12px;">${escapeHtml(x.rule || '')}</div></div>`).join('');
+  }
+  function srtSaveResult(winnersNames, ruleText){
+    try{
+      const h = srtLoadHistory();
+      h.push({ date: todayISO(), winners: winnersNames, rule: ruleText });
+      localStorage.setItem(SORTEIO_HIST_KEY, JSON.stringify(h.slice(-30)));
+    }catch(e){}
+  }
+
+  /* ---- Tela cheia ---- */
+  let srtState = null;
+  function srtConfetti(){
+    const cv = srtEl('srtConfetti'); cv.style.display = 'block';
+    cv.width = window.innerWidth; cv.height = window.innerHeight;
+    const ctx = cv.getContext('2d');
+    const colors = ['#ffd98a','#c7a567','#ffffff','#e0b0a0','#9fc29a'];
+    const ps = Array.from({length:150}, ()=>({ x: Math.random()*cv.width, y: -20 - Math.random()*cv.height*0.5, w: 6+Math.random()*6, h: 8+Math.random()*8, vy: 2+Math.random()*4, vx: -2+Math.random()*4, r: Math.random()*6, vr: -.2+Math.random()*.4, c: colors[Math.floor(Math.random()*colors.length)] }));
+    const t0 = performance.now();
+    (function frame(t){
+      ctx.clearRect(0,0,cv.width,cv.height);
+      ps.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.fillStyle=p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore(); });
+      if(t - t0 < 4500) requestAnimationFrame(frame); else { ctx.clearRect(0,0,cv.width,cv.height); cv.style.display='none'; }
+    })(t0);
+  }
+  function srtOpenStage(){
+    const { rules, list } = srtBuildPool();
+    if(!list.length) return;
+    const total = Math.min(rules.winners, list.length);
+    srtState = { rules, pool: list, total, winners: [], busy: false, ruleText: srtRuleText(rules, list.length) };
+    srtEl('stTitle').textContent = 'Sorteio' + (total > 1 ? ' — ' + total + ' ganhadoras' : '');
+    srtEl('stRule').textContent = srtState.ruleText;
+    srtEl('stWinners').innerHTML = '';
+    const w = srtEl('stWheel'); w.className = 'st-wheel'; w.textContent = '🎁';
+    srtEl('stDraw').textContent = 'Sortear!'; srtEl('stDraw').disabled = false; srtEl('stDraw').style.display = '';
+    srtEl('stReset').style.display = 'none';
+    srtRenderStageNames();
+    srtEl('srtStage').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function srtRenderStageNames(){
+    const box = srtEl('stNames'); box.innerHTML = '';
+    const wonKeys = new Set(srtState.winners.map(c=>c.key));
+    srtState.pool.forEach(c=>{
+      const sp = document.createElement('span');
+      sp.className = 'st-name' + (wonKeys.has(c.key) ? ' won' : '');
+      sp.textContent = srtDisplayName(c.name);
+      box.appendChild(sp);
+    });
+  }
+  function srtCloseStage(){
+    srtEl('srtStage').classList.remove('open');
+    document.body.style.overflow = '';
+    srtState = null;
+  }
+  function srtDrawNext(){
+    const st = srtState; if(!st || st.busy) return;
+    const remaining = st.pool.filter(c => !st.winners.some(w=>w.key===c.key));
+    if(!remaining.length || st.winners.length >= st.total) return;
+    st.busy = true;
+    const winner = srtPick(remaining, st.rules);
+    const wheel = srtEl('stWheel'), btn = srtEl('stDraw');
+    btn.disabled = true;
+    wheel.className = 'st-wheel rolling';
+    const names = remaining.map(c => srtDisplayName(c.name));
+    const t0 = performance.now(), dur = 5200;
+    let last = 0, gap = 55;
+    (function tick(t){
+      const el = t - t0;
+      if(el >= dur){
+        wheel.className = 'st-wheel final';
+        wheel.textContent = srtDisplayName(winner.name);
+        srtConfetti();
+        st.winners.push(winner);
+        const line = document.createElement('div');
+        line.textContent = (st.total > 1 ? st.winners.length + 'ª  ' : '🏆 ') + srtDisplayName(winner.name);
+        srtEl('stWinners').appendChild(line);
+        srtRenderStageNames();
+        st.busy = false;
+        if(st.winners.length >= st.total){
+          btn.style.display = 'none';
+          srtSaveResult(st.winners.map(c=>srtPretty(c.name)), st.ruleText);
+          renderSorteioHistory();
+        } else {
+          btn.disabled = false; btn.textContent = 'Sortear a próxima';
+        }
+        srtEl('stReset').style.display = '';
+        return;
+      }
+      if(t - last >= gap){
+        last = t;
+        wheel.textContent = names[srtRandInt(names.length)];
+        gap = 55 + Math.pow(el / dur, 3) * 420;   // vai desacelerando
+      }
+      requestAnimationFrame(tick);
+    })(t0);
+  }
+
+  ['srtPeriod','srtFrom','srtTo','srtPaid','srtMinPurchases','srtMinSpent','srtWeight','srtWinners','srtNameMode'].forEach(id=>{
+    const el = srtEl(id);
+    el.addEventListener('input', renderSorteio);
+    el.addEventListener('change', renderSorteio);
+  });
+  srtEl('srtManualAdd').addEventListener('click', ()=>{
+    const inp = srtEl('srtManualName'); const n = inp.value.trim();
+    if(!n) return;
+    if(!srtManual.some(x => x.toLowerCase() === n.toLowerCase())) srtManual.push(n);
+    inp.value = ''; renderSorteio();
+  });
+  srtEl('srtManualName').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); srtEl('srtManualAdd').click(); } });
+  srtEl('srtStart').addEventListener('click', srtOpenStage);
+  srtEl('srtClose').addEventListener('click', srtCloseStage);
+  srtEl('stDraw').addEventListener('click', srtDrawNext);
+  srtEl('stReset').addEventListener('click', ()=>{ const keep = srtState; srtCloseStage(); srtOpenStage(); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && srtState && !srtState.busy) srtCloseStage(); });
 
   /* ================= CLIENTES ================= */
   const cliOpenSet = new Set();
