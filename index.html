@@ -731,6 +731,19 @@
   #srtStage .st-close{ position:absolute; top:12px; right:16px; font-size:26px; color:#d8c9a8; cursor:pointer; background:none; border:0; }
   #srtConfetti{ position:fixed; inset:0; pointer-events:none; z-index:10001; display:none; }
 
+  .rev-filters{ display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:8px; align-items:center; }
+  .rev-filters input[type=text], .rev-filters select{ padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font-size:14px; font-family:inherit; width:100%; }
+  .rev-check{ font-size:13px; display:flex; gap:6px; align-items:center; white-space:nowrap; }
+  @media(max-width:700px){ .rev-filters{ grid-template-columns:1fr 1fr; } .rev-filters input[type=text]{ grid-column:1 / -1; } }
+  .rev-list{ display:flex; flex-direction:column; gap:6px; max-height:460px; overflow:auto; }
+  .rev-item{ display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--card); cursor:pointer; }
+  .rev-item.sel{ border-color:var(--bronze); background:var(--table-hover); }
+  .rev-thumb{ width:44px; height:56px; border-radius:6px; background:var(--paper-deep) center/cover no-repeat; flex:0 0 auto; }
+  .rev-info{ flex:1; min-width:0; }
+  .rev-name{ font-size:14px; font-weight:600; }
+  .rev-meta{ font-size:12px; color:var(--muted); }
+  .rev-price{ text-align:right; font-size:13px; line-height:1.4; white-space:nowrap; }
+  .rev-price b{ font-size:15px; }
   .btn-primary{
     background:var(--bronze);
     color:#fff;
@@ -1713,6 +1726,10 @@
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M12 8v13"/><path d="M3 12h18"/><path d="M12 8c-2.5 0-4.5-1-4.5-3a2 2 0 013.4-1.4L12 5l1.1-1.4A2 2 0 0116.5 5c0 2-2 3-4.5 3z"/></svg></span>
         Sorteio
       </div>
+      <div class="nav-item" data-page="revenda">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 12h7M9 16h7"/></svg></span>
+        Tabela de revenda
+      </div>
       <div class="nav-item" data-page="promocoes">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.59 13.41L11 3.83A2 2 0 009.59 3H4a1 1 0 00-1 1v5.59a2 2 0 00.59 1.41l9.58 9.58a2 2 0 002.82 0l4.6-4.6a2 2 0 000-2.82z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span>
         Promoção
@@ -2550,6 +2567,47 @@
       </div>
     </div>
 
+    <div class="page" id="page-revenda">
+      <div class="page-vendas-inner">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Tabela de revenda</h1>
+            <div class="page-title-sub">Escolha as peças e gere um PDF ou uma planilha para mandar a quem vai vender por você: foto, nome, tamanhos e preços (à vista e no cartão) em destaque.</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title"><span class="catalog-config-title">1. Escolha as peças</span></div>
+          <div class="rev-filters">
+            <input type="text" id="revSearch" placeholder="Buscar por nome ou cor…">
+            <select id="revCategory"><option value="">Todas as categorias</option></select>
+            <select id="revSize"><option value="">Todos os tamanhos</option></select>
+            <label class="rev-check"><input type="checkbox" id="revStock" checked> Só peças com estoque</label>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0;">
+            <button type="button" class="btn btn-secondary" id="revAll">Marcar todas que aparecem</button>
+            <button type="button" class="btn btn-secondary" id="revNone">Limpar seleção</button>
+            <span id="revCount" style="font-size:13px;color:var(--muted);"></span>
+          </div>
+          <div id="revList" class="rev-list"></div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title"><span class="catalog-config-title">2. Título e observação (opcional)</span></div>
+          <div class="sort-rules">
+            <div class="f-field"><label>Título</label><input type="text" id="revTitle" value="Tabela de preços — Trama Store"></div>
+            <div class="f-field"><label>Observação (aparece no topo)</label><input type="text" id="revNote" placeholder="Ex.: Preço à vista no Pix ou dinheiro."></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" id="revPdf" style="padding:12px 22px;font-size:15px;">📄 Gerar PDF</button>
+          <button type="button" class="btn btn-secondary" id="revXlsx" style="padding:12px 22px;font-size:15px;">📊 Baixar Excel</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5;">PDF: abre a tabela pronta e a tela de impressão — escolha <strong>Salvar como PDF</strong> e depois envie o arquivo pelo WhatsApp. O Excel tem as mesmas informações, sem as fotos (traz o link da foto de cada peça).</div>
+      </div>
+    </div>
+
     <div class="page" id="page-promocoes">
       <div class="page-vendas-inner">
         <div class="page-title">Promoção</div>
@@ -2797,7 +2855,7 @@
 <script>
   /* ================= NAVEGAÇÃO ================= */
   const navItems = document.querySelectorAll('.nav-item[data-page]');
-  const pages = { vendas: document.getElementById('page-vendas'), catalogo: document.getElementById('page-catalogo'), promocoes: document.getElementById('page-promocoes'), clientes: document.getElementById('page-clientes'), sorteio: document.getElementById('page-sorteio'), arte: document.getElementById('page-arte') };
+  const pages = { vendas: document.getElementById('page-vendas'), catalogo: document.getElementById('page-catalogo'), promocoes: document.getElementById('page-promocoes'), clientes: document.getElementById('page-clientes'), sorteio: document.getElementById('page-sorteio'), revenda: document.getElementById('page-revenda'), arte: document.getElementById('page-arte') };
   let promoLoaded = false;
 
   /* Ponte com a Arte Promocional (iframe): quando a pré-visualização em tela
@@ -2827,6 +2885,7 @@
       pages[key].classList.add('active');
       if(key === 'clientes' && typeof renderClientes === 'function') renderClientes();
       if(key === 'sorteio' && typeof renderSorteio === 'function') renderSorteio();
+      if(key === 'revenda' && typeof renderRevenda === 'function') renderRevenda();
       if(key === 'arte' && !promoLoaded){
         const html = decodeURIComponent(escape(atob(PROMO_HTML_B64)));
         document.getElementById('promoFrame').srcdoc = html;
@@ -6182,6 +6241,139 @@ function guessColorHex(name){
     updateCardHint();
     updateCostHint();
   }, e=> console.error('Erro ao ler taxas do servidor:', e));
+
+  /* ================= TABELA DE REVENDA ================= */
+  const revSel = new Set();
+  const revEl = id => document.getElementById(id);
+  const revEsc = v => String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const revMoney = n => 'R$ ' + Number(n||0).toFixed(2).replace('.',',');
+
+  function revCardPrice(c){
+    const base = Number(c.price) || 0;
+    if(c.priceCard != null && c.priceCard !== '' && Number(c.priceCard) > base) return Number(c.priceCard);
+    const pct = cardFeePct(String(cardFees.defaultInst || 1));
+    return pct > 0 ? priceWithCardFee(base, pct) : base;
+  }
+  function revSizes(c, onlyStock){
+    let sz = (c.sizes || []).filter(x => x && x.size);
+    if(onlyStock) sz = sz.filter(x => Number(x.qty) > 0);
+    return sz.map(x => x.size);
+  }
+  function revVisible(){
+    const q = revEl('revSearch').value.trim().toLowerCase();
+    const cat = revEl('revCategory').value, size = revEl('revSize').value, onlyStock = revEl('revStock').checked;
+    return catalog.filter(c=>{
+      if(q && !((c.name||'').toLowerCase().includes(q) || (c.color||'').toLowerCase().includes(q))) return false;
+      if(cat && c.category !== cat) return false;
+      const sz = revSizes(c, onlyStock);
+      if(onlyStock && !sz.length) return false;
+      if(size && !sz.includes(size)) return false;
+      return true;
+    }).sort((a,b)=> (a.name||'').localeCompare(b.name||'','pt-BR') || (a.color||'').localeCompare(b.color||'','pt-BR'));
+  }
+  function revFillOptions(){
+    const cats = [...new Set(catalog.map(c=>c.category).filter(Boolean))].sort();
+    const sizes = [...new Set(catalog.flatMap(c => (c.sizes||[]).map(x=>x.size)).filter(Boolean))].sort();
+    const cSel = revEl('revCategory'), sSel = revEl('revSize');
+    const cv = cSel.value, sv = sSel.value;
+    cSel.innerHTML = '<option value="">Todas as categorias</option>' + cats.map(x=>`<option value="${revEsc(x)}">${revEsc(x)}</option>`).join('');
+    sSel.innerHTML = '<option value="">Todos os tamanhos</option>' + sizes.map(x=>`<option value="${revEsc(x)}">${revEsc(x)}</option>`).join('');
+    if(cats.includes(cv)) cSel.value = cv;
+    if(sizes.includes(sv)) sSel.value = sv;
+  }
+  function renderRevenda(rebuildOptions){
+    if(rebuildOptions !== false) revFillOptions();
+    const list = revVisible();
+    const onlyStock = revEl('revStock').checked;
+    const box = revEl('revList');
+    box.innerHTML = '';
+    if(!list.length) box.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px;">Nenhuma peça com esses filtros.</div>';
+    list.forEach(c=>{
+      const row = document.createElement('label');
+      row.className = 'rev-item' + (revSel.has(c.id) ? ' sel' : '');
+      row.innerHTML = `<input type="checkbox" ${revSel.has(c.id) ? 'checked' : ''}>
+        <div class="rev-thumb" ${c.photo && !String(c.photo).startsWith('data:') ? `style="background-image:url('${revEsc(c.photo)}')"` : (c.photo ? `style="background-image:url('${c.photo}')"` : '')}></div>
+        <div class="rev-info"><div class="rev-name">${revEsc(c.name)}${c.color ? ' <span style="font-weight:400;color:var(--muted)">· ' + revEsc(c.color) + '</span>' : ''}</div>
+        <div class="rev-meta">Tamanhos: ${revEsc(revSizes(c, onlyStock).join(' · ') || '—')}</div></div>
+        <div class="rev-price"><b>${revMoney(c.price)}</b> à vista<br>${revMoney(revCardPrice(c))} cartão</div>`;
+      row.querySelector('input').addEventListener('change', e=>{
+        if(e.target.checked) revSel.add(c.id); else revSel.delete(c.id);
+        row.classList.toggle('sel', e.target.checked);
+        revUpdateCount();
+      });
+      box.appendChild(row);
+    });
+    revUpdateCount();
+  }
+  function revUpdateCount(){
+    const n = revSel.size;
+    revEl('revCount').textContent = n ? n + (n === 1 ? ' peça selecionada' : ' peças selecionadas') : 'Nenhuma peça selecionada';
+  }
+  function revSelectedRows(){
+    const onlyStock = revEl('revStock').checked;
+    return catalog.filter(c => revSel.has(c.id))
+      .sort((a,b)=> (a.name||'').localeCompare(b.name||'','pt-BR') || (a.color||'').localeCompare(b.color||'','pt-BR'))
+      .map(c => ({ name: c.name || '', color: c.color || '', sizes: revSizes(c, onlyStock), price: Number(c.price) || 0, card: revCardPrice(c),
+                   photo: (c.photo && !String(c.photo).startsWith('data:')) ? c.photo : (c.photo || '') }));
+  }
+  function revBuildPdfHtml(rows){
+    const title = revEl('revTitle').value.trim() || 'Tabela de preços';
+    const note = revEl('revNote').value.trim();
+    const date = new Date().toLocaleDateString('pt-BR');
+    const cards = rows.map(r => `<div class="it">
+      <div class="ph">${r.photo ? `<img src="${revEsc(r.photo)}" alt="">` : '<div class="no">sem foto</div>'}</div>
+      <div class="tx">
+        <div class="nm">${revEsc(r.name)}</div>
+        ${r.color ? `<div class="cl">${revEsc(r.color)}</div>` : ''}
+        <div class="sz"><span>Tamanhos:</span> ${r.sizes.length ? r.sizes.map(z=>`<b>${revEsc(z)}</b>`).join('') : '—'}</div>
+        <div class="pr"><div class="p1"><small>À VISTA</small><strong>${revMoney(r.price)}</strong></div><div class="p2"><small>NO CARTÃO</small><strong>${revMoney(r.card)}</strong></div></div>
+      </div></div>`).join('');
+    const css = '@page{size:A4;margin:12mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#211d18;background:#fff}'
+      + '.bar{position:sticky;top:0;background:#211d18;color:#fff;padding:10px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-size:13px;z-index:5}.bar button{background:#c7a567;color:#211d18;border:0;border-radius:8px;padding:9px 16px;font-weight:700;font-size:14px;cursor:pointer}'
+      + '.wrap{max-width:820px;margin:0 auto;padding:18px 16px}h1{font-size:24px;margin:0 0 2px}.sub{color:#777;font-size:12.5px;margin-bottom:4px}.note{background:#f6f1e7;border-left:4px solid #9c7a46;padding:8px 12px;margin:10px 0 14px;font-size:13.5px}'
+      + '.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.it{display:flex;gap:10px;border:1px solid #d8d0bf;border-radius:10px;padding:8px;break-inside:avoid;page-break-inside:avoid}'
+      + '.ph{width:92px;height:122px;flex:0 0 auto;background:#eee;border-radius:6px;overflow:hidden}.ph img{width:100%;height:100%;object-fit:cover;display:block}.no{height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:11px}'
+      + '.tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.nm{font-weight:700;font-size:14px;line-height:1.2}.cl{font-size:12px;color:#777}.sz{font-size:12px;color:#555}.sz b{display:inline-block;border:1px solid #211d18;border-radius:4px;padding:0 6px;margin:0 3px 3px 0;color:#211d18}'
+      + '.pr{display:flex;gap:6px;margin-top:auto}.pr div{flex:1;border-radius:8px;padding:5px 7px;text-align:center}.p1{background:#14532d;color:#fff;box-shadow:inset 0 0 0 100px #14532d}.p2{background:#7c5a1e;color:#fff;box-shadow:inset 0 0 0 100px #7c5a1e}.pr small{display:block;font-size:10px;font-weight:700;letter-spacing:.08em}.p1 strong{font-size:21px;font-weight:800;line-height:1.2}.p2 strong{font-size:16px;line-height:1.3}.p1{flex:1.25 !important}'
+      + '@media print{.bar{display:none}.wrap{padding:0}}@media(max-width:560px){.grid{grid-template-columns:1fr}}';
+    return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + revEsc(title) + '</title><style>' + css + '</style></head><body>'
+      + '<div class="bar"><span>Para salvar: toque em <b>Salvar como PDF</b> na tela de impressão.</span><button onclick="window.print()">Salvar / Imprimir PDF</button></div>'
+      + '<div class="wrap"><h1>' + revEsc(title) + '</h1><div class="sub">' + rows.length + (rows.length === 1 ? ' peça' : ' peças') + ' · atualizado em ' + date + '</div>'
+      + (note ? '<div class="note">' + revEsc(note) + '</div>' : '') + '<div class="grid">' + cards + '</div></div>'
+      + '<script>window.addEventListener("load",function(){setTimeout(function(){try{window.print()}catch(e){}},500)});<' + '/script></body></html>';
+  }
+  function revNeedSelection(){
+    if(!revSel.size){ showToast('Marque pelo menos uma peça.'); return false; }
+    return true;
+  }
+  ['revSearch','revSize','revCategory','revStock'].forEach(id=>{
+    revEl(id).addEventListener('input', ()=> renderRevenda(false));
+    revEl(id).addEventListener('change', ()=> renderRevenda(false));
+  });
+  revEl('revAll').addEventListener('click', ()=>{ revVisible().forEach(c=> revSel.add(c.id)); renderRevenda(false); });
+  revEl('revNone').addEventListener('click', ()=>{ revSel.clear(); renderRevenda(false); });
+  revEl('revPdf').addEventListener('click', ()=>{
+    if(!revNeedSelection()) return;
+    const url = URL.createObjectURL(new Blob([revBuildPdfHtml(revSelectedRows())], {type:'text/html'}));
+    const w = window.open(url, '_blank');
+    if(!w) showToast('O navegador bloqueou a nova aba. Permita pop-ups e tente de novo.');
+  });
+  revEl('revXlsx').addEventListener('click', ()=>{
+    if(!revNeedSelection()) return;
+    const rows = revSelectedRows().map(r => ({
+      'Peça': r.name, 'Cor': r.color, 'Tamanhos': r.sizes.join(' / '),
+      'Preço à vista (R$)': Number(r.price.toFixed(2)), 'Preço no cartão (R$)': Number(r.card.toFixed(2)),
+      'Foto (link)': (r.photo && !String(r.photo).startsWith('data:')) ? r.photo : ''
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:34},{wch:16},{wch:18},{wch:18},{wch:20},{wch:50}];
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for(let R = 1; R <= range.e.r; R++){ [3,4].forEach(C=>{ const a = XLSX.utils.encode_cell({r:R,c:C}); if(ws[a]) ws[a].z = '"R$" #,##0.00'; }); }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Preços');
+    XLSX.writeFile(wb, 'trama-tabela-precos-' + todayISO() + '.xlsx');
+    showToast('Planilha baixada.');
+  });
 
   /* ================= SORTEIO ================= */
   const SORTEIO_HIST_KEY = 'trama_sorteios_v1';
